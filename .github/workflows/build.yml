@@ -30,11 +30,10 @@ jobs:
       - name: Install Cordova
         run: npm install -g cordova
 
-      # --- NOVO PASSO: Detectar a versão das ferramentas do Android instaladas ---
+      # --- DETECTOR DE VERSÃO (Mantido) ---
       - name: Detect Android Build Tools
         id: android_tools
         run: |
-          # Procura a pasta de build-tools e pega a última versão (a mais nova)
           BUILD_TOOLS_VERSION=$(ls $ANDROID_SDK_ROOT/build-tools/ | sort -V | tail -n 1)
           echo "Ferramentas encontradas: $BUILD_TOOLS_VERSION"
           echo "version=$BUILD_TOOLS_VERSION" >> $GITHUB_OUTPUT
@@ -78,20 +77,22 @@ jobs:
           cd app
           cordova build android --release -- --packageType=apk
 
+      # --- ASSINATURA (MODERNIZADA) ---
+      # Trocamos para 'ilharp/sign-android-release@v1' que aceita o buildToolsVersion
       - name: Sign APK
         id: sign_app
-        uses: r0adkll/sign-android-release@v1
+        uses: ilharp/sign-android-release@v1
         with:
           releaseDirectory: app/platforms/android/app/build/outputs/apk/release
           signingKeyBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           alias: ${{ secrets.ANDROID_KEY_ALIAS }}
           keyStorePassword: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           keyPassword: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          # Aqui usamos a versão que detectamos no passo anterior
           buildToolsVersion: ${{ steps.android_tools.outputs.version }}
         
+      # Upload do APK (Caminho atualizado para signedFile)
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: EletroNIC-KMZ-2026-Release
-          path: ${{ steps.sign_app.outputs.signedReleaseFile }}
+          path: ${{ steps.sign_app.outputs.signedFile }}
