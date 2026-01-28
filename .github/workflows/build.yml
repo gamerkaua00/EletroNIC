@@ -37,7 +37,16 @@ jobs:
         run: |
           rm app/www/index.html
           cp index.html app/www/index.html
-          # Copia o HTML principal para a pasta do Cordova
+          
+          # Lógica para adicionar o Ícone (se o arquivo icon.png existir no repo)
+          if [ -f "icon.png" ]; then
+            echo "Ícone personalizado encontrado! Configurando..."
+            cp icon.png app/www/icon.png
+            # Injeta a tag de ícone no arquivo de configuração do Cordova
+            sed -i 's|</widget>|<icon src="www/icon.png" /></widget>|' app/config.xml
+          else
+            echo "Aviso: icon.png não encontrado. O app será gerado com o ícone padrão do Cordova."
+          fi
 
       - name: Build APK (Debug Version)
         run: |
