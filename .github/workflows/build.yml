@@ -13,7 +13,6 @@ jobs:
       - name: Checkout Source Code
         uses: actions/checkout@v3
 
-      # CORREÇÃO: Removi o "cache: npm" para não dar erro de falta de arquivo
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
@@ -31,6 +30,15 @@ jobs:
       - name: Install Cordova
         run: npm install -g cordova
 
+      # --- NOVO PASSO: Detectar a versão das ferramentas do Android instaladas ---
+      - name: Detect Android Build Tools
+        id: android_tools
+        run: |
+          # Procura a pasta de build-tools e pega a última versão (a mais nova)
+          BUILD_TOOLS_VERSION=$(ls $ANDROID_SDK_ROOT/build-tools/ | sort -V | tail -n 1)
+          echo "Ferramentas encontradas: $BUILD_TOOLS_VERSION"
+          echo "version=$BUILD_TOOLS_VERSION" >> $GITHUB_OUTPUT
+
       - name: Create Cordova App
         run: |
           cordova create app com.kmz.eletronic "EletroNIC"
@@ -41,7 +49,6 @@ jobs:
         run: |
           rm app/www/index.html
           
-          # Mantivemos sua proteção original intacta:
           echo "Aplicando proteção de código..."
           html-minifier-terser \
             --collapse-whitespace \
@@ -51,7 +58,6 @@ jobs:
             --output app/www/index.html \
             index.html
           
-          # Mantivemos sua configuração visual intacta:
           echo "Configurando preferências visuais..."
           sed -i '/<\/widget>/i \    <preference name="ShowSplashScreen" value="false" />' app/config.xml
           sed -i '/<\/widget>/i \    <preference name="SplashScreenDelay" value="0" />' app/config.xml
@@ -67,13 +73,11 @@ jobs:
             sed -i '/<\/widget>/i \    <preference name="AndroidWindowSplashScreenAnimatedIcon" value="www/icon.png" />' app/config.xml
           fi
 
-      # MUDANÇA: Gera o APK em modo RELEASE (pronto para assinar)
       - name: Build APK (Release Version)
         run: |
           cd app
           cordova build android --release -- --packageType=apk
 
-      # Passo de Assinatura usando seus Secrets
       - name: Sign APK
         id: sign_app
         uses: r0adkll/sign-android-release@v1
@@ -83,8 +87,9 @@ jobs:
           alias: ${{ secrets.ANDROID_KEY_ALIAS }}
           keyStorePassword: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           keyPassword: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          # Aqui usamos a versão que detectamos no passo anterior
+          buildToolsVersion: ${{ steps.android_tools.outputs.version }}
         
-      # Upload do APK final ASSINADO
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
