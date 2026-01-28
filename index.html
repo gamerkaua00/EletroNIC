@@ -1,0 +1,1602 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- METADADOS DE AUTORIA E SEGURANÇA -->
+    <meta name="author" content="Kauã Mazur dos Reis">
+    <meta name="copyright" content="© 2026 KMZ Technologies">
+    <meta name="application-name" content="EletroNIC">
+    <meta name="description" content="App de Eletrônica Digital desenvolvido por Kauã Mazur dos Reis (KMZ). Todos os direitos reservados.">
+    
+    <title>EletroNIC</title>
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --primary-dark: #2563eb;
+            --primary-gradient: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            --accent: #f59e0b;
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --surface-light: #334155;
+            --text: #f1f5f9;
+            --text-muted: #94a3b8;
+            --success: #10b981;
+            --danger: #ef4444;
+            --border: #334155;
+            --radius: 16px;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.15);
+            /* Cores Neon para a Tabela */
+            --neon-green: #00ff9d;
+            --neon-red: #ff3366;
+            --table-bg: #020617; /* Preto bem profundo */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            outline: none;
+            /* Proteção contra seleção de texto (Anti-Cópia Simples) */
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        
+        /* Permitir seleção apenas em inputs para o usuário digitar */
+        input, textarea {
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
+            user-select: text;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- HEADER --- */
+        header {
+            background: var(--surface);
+            padding: 16px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        header h1 {
+            font-size: 1.25rem;
+            font-weight: 800;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 0.5px;
+            margin: 0;
+            text-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+        }
+
+        /* --- MAIN CONTENT --- */
+        main {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            padding-bottom: 90px;
+            position: relative;
+            scroll-behavior: smooth;
+        }
+        
+        /* Animações de Transição */
+        .view-section {
+            display: none;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        .view-section.active {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* --- CARDS & CONTAINERS --- */
+        .card {
+            background-color: var(--surface);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+        }
+        h2 {
+            font-size: 1.1rem;
+            margin-bottom: 16px;
+            color: var(--text);
+            border-left: 4px solid var(--primary);
+            padding-left: 10px;
+        }
+        h3 {
+            font-size: 1rem;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            margin-top: 5px;
+        }
+
+        /* --- FORM ELEMENTS --- */
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        select, input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 14px;
+            background-color: var(--bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin-bottom: 16px;
+            font-size: 1rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        select:focus, input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+        input[type="text"] {
+            font-family: 'Courier New', monospace;
+            letter-spacing: 1px;
+            font-weight: bold;
+        }
+
+        /* --- BOTÕES --- */
+        .btn {
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+            font-size: 1rem;
+            margin-top: 8px;
+            box-shadow: 0 4px 6px rgba(37, 99, 235, 0.3);
+            transition: transform 0.1s, filter 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn:active {
+            transform: scale(0.97);
+            filter: brightness(0.9);
+        }
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--primary-dark);
+            color: var(--primary);
+            box-shadow: none;
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);
+        }
+        .btn-danger {
+            background: transparent;
+            border: 2px solid var(--danger);
+            color: var(--danger);
+            box-shadow: none;
+        }
+        .btn-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 8px;
+        }
+        .btn-row .btn {
+            margin-top: 0;
+        }
+
+        /* --- TECLADO VIRTUAL --- */
+        .keyboard-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .key-btn {
+            background: var(--surface-light);
+            border: none;
+            color: var(--text);
+            padding: 14px 0;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: background 0.1s, transform 0.1s;
+        }
+        .key-btn:active {
+            background: var(--border);
+            transform: translateY(2px);
+        }
+        .key-btn.var { color: #86efac; background: rgba(34, 197, 94, 0.15); }
+        .key-btn.op { color: #fcd34d; background: rgba(245, 158, 11, 0.15); }
+        .key-btn.complex { font-size: 0.9rem; color: #f9a8d4; background: rgba(236, 72, 153, 0.15); }
+        .key-btn.del { color: #fca5a5; background: rgba(239, 68, 68, 0.15); }
+
+        /* --- MAPA DE KARNAUGH --- */
+        .kmap-wrapper {
+            overflow-x: auto;
+            padding: 10px 0;
+            display: flex;
+            justify-content: center;
+        }
+        .kmap-grid {
+            display: grid;
+            gap: 4px;
+            margin-bottom: 15px;
+            font-family: 'Courier New', monospace;
+            user-select: none;
+        }
+        .kmap-grid.vars-4 { grid-template-columns: 40px repeat(4, 50px); }
+        .kmap-grid.vars-3 { grid-template-columns: 40px repeat(4, 50px); }
+        .kmap-grid.vars-2 { grid-template-columns: 40px repeat(2, 50px); }
+        .kmap-cell {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            height: 50px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.2rem;
+            font-weight: bold;
+            transition: all 0.2s;
+            position: relative; 
+        }
+        .kmap-cell.state-0 { color: var(--text-muted); opacity: 0.5; }
+        .kmap-cell.state-1 { color: white; background: var(--primary); border-color: var(--primary-dark); box-shadow: 0 0 10px rgba(59, 130, 246, 0.4); }
+        .kmap-cell.state-x { color: var(--bg); background: var(--accent); border-color: var(--accent); }
+        
+        .kmap-cell.educ-highlight {
+            border: 3px solid #f43f5e !important;
+            box-shadow: 0 0 20px #f43f5e;
+            z-index: 10;
+            transform: scale(1.1);
+        }
+
+        .kmap-header {
+            font-weight: bold;
+            color: var(--accent);
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .kmap-corner {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            border-right: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .equation-box {
+            background: rgba(15, 23, 42, 0.5);
+            padding: 16px;
+            border-radius: 12px;
+            font-family: 'Courier New', monospace;
+            border: 1px solid var(--primary-dark);
+            color: var(--primary);
+            font-size: 1.1rem;
+            margin: 15px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            min-height: 56px;
+            flex-wrap: wrap; 
+        }
+        .interactive-term {
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: all 0.2s;
+            border-bottom: 2px dashed var(--accent);
+            margin: 0 4px;
+        }
+        .interactive-term:hover, .interactive-term:active {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--accent);
+            transform: scale(1.05);
+        }
+        .equation-hint {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-align: center;
+            margin-top: -10px;
+            margin-bottom: 15px;
+            font-style: italic;
+        }
+
+        /* --- TABELA VERDADE (DARK NEON STYLE) --- */
+        .table-container {
+            overflow-x: auto;
+            border-radius: 12px;
+            border: 1px solid #333;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            margin-top: 20px;
+        }
+        .truth-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95rem;
+            text-align: center;
+            white-space: nowrap;
+            background-color: var(--table-bg);
+        }
+        .truth-table th {
+            background-color: #0f172a;
+            color: var(--primary);
+            padding: 15px;
+            font-weight: 800;
+            border-bottom: 2px solid var(--primary-dark);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .truth-table td {
+            padding: 12px;
+            border-bottom: 1px solid #1e293b;
+            color: #64748b;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+        }
+        .truth-table tr:last-child td {
+            border-bottom: none;
+        }
+        .truth-table tr:hover td {
+            background-color: rgba(255,255,255,0.03);
+        }
+        .truth-table td.result-1 {
+            color: var(--neon-green);
+            font-weight: 900;
+            font-size: 1.1rem;
+            text-shadow: 0 0 8px var(--neon-green), 0 0 15px rgba(0, 255, 157, 0.4);
+        }
+        .truth-table td.result-0 {
+            color: var(--neon-red);
+            font-weight: 900;
+            font-size: 1.1rem;
+            text-shadow: 0 0 8px var(--neon-red), 0 0 15px rgba(255, 51, 102, 0.4);
+        }
+
+        /* --- CANVAS --- */
+        .canvas-container {
+            overflow: auto;
+            -webkit-overflow-scrolling: touch;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: #ffffff;
+            touch-action: pan-x pan-y;
+            display: flex;
+            justify-content: center;
+            padding: 10px;
+            min-height: 300px;
+        }
+
+        /* --- MODAL (POPUP) OTIMIZADO PARA PRINT --- */
+        .modal {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.95); /* Fundo bem escuro */
+            backdrop-filter: blur(8px);
+            z-index: 100;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0; /* Sem padding para maximizar */
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        .modal.visible {
+            opacity: 1;
+            pointer-events: all;
+        }
+        .modal-content {
+            background: #0f172a;
+            width: 98%;
+            height: 95%;
+            border-radius: 8px;
+            border: 2px solid var(--primary);
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .modal-content img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* Garante que a imagem inteira apareça */
+            border-radius: 4px;
+            background: #fff;
+        }
+        .modal-header-text {
+            color: var(--text);
+            font-weight: bold;
+            margin-bottom: 8px;
+            position: absolute;
+            top: 10px;
+            left: 15px;
+            background: rgba(0,0,0,0.6);
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        .close-modal {
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            color: var(--danger);
+            font-size: 3rem; /* X bem grande */
+            cursor: pointer;
+            line-height: 0.8;
+            font-weight: 900;
+            z-index: 102;
+            background: rgba(0,0,0,0.5);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .close-modal:active { transform: scale(0.9); background: rgba(255,255,255,0.2); }
+
+        /* --- NAVBAR --- */
+        nav {
+            background: rgba(30, 41, 59, 0.95);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            padding-bottom: max(10px, env(safe-area-inset-bottom));
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            z-index: 50;
+        }
+        .nav-btn {
+            background: none; border: none; color: var(--text-muted); font-size: 0.65rem;
+            display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; width: 14%; transition: color 0.2s; position: relative;
+        }
+        .nav-btn svg { width: 24px; height: 24px; fill: currentColor; transition: transform 0.2s; }
+        .nav-btn.active { color: var(--primary); font-weight: 600; }
+        .nav-btn.active svg { transform: translateY(-3px); filter: drop-shadow(0 4px 6px rgba(59, 130, 246, 0.5)); }
+
+        /* --- SWITCHES --- */
+        .switch { position: relative; display: inline-block; width: 52px; height: 30px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--surface-light); transition: .3s; border-radius: 34px; border: 1px solid var(--border); }
+        .slider:before { position: absolute; content: ""; height: 22px; width: 22px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        input:checked + .slider { background-color: var(--success); border-color: var(--success); }
+        input:checked + .slider:before { transform: translateX(22px); }
+        
+        .gate-visualizer { display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 20px 0; }
+        .io-row { display: flex; align-items: center; gap: 20px; width: 100%; justify-content: center; }
+        .io-ctrl { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+
+        .hidden { display: none !important; }
+        .flex-between { display: flex; justify-content: space-between; align-items: center; }
+        
+        /* --- CALCULADORA --- */
+        .conv-row { display: flex; align-items: center; margin-bottom: 12px; gap: 12px; }
+        .conv-label { width: 40px; font-weight: bold; color: var(--accent); font-size: 0.9rem; text-align: right; }
+        .calc-input-group { display: flex; gap: 8px; margin-bottom: 12px; }
+        .res-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 0.95rem; }
+        .res-row span:last-child { font-family: 'Courier New', monospace; color: var(--success); font-weight: bold; }
+
+        /* --- AJUDA --- */
+        details { background: var(--surface-light); border-radius: 8px; margin-bottom: 10px; padding: 0; overflow: hidden; }
+        summary { padding: 15px; cursor: pointer; font-weight: bold; color: var(--text); list-style: none; display: flex; justify-content: space-between; align-items: center; }
+        summary:after { content: '+'; font-size: 1.2rem; color: var(--primary); }
+        details[open] summary:after { content: '-'; }
+        details[open] summary { border-bottom: 1px solid var(--border); }
+        .manual-content { padding: 15px; font-size: 0.95rem; color: var(--text-muted); line-height: 1.6; }
+        
+        .contact-item { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; font-size: 0.95rem; }
+        .contact-item svg { fill: var(--primary); width: 20px; height: 20px; flex-shrink: 0; }
+        .contact-label { color: var(--text-muted); min-width: 60px; }
+        .contact-value { color: var(--text); font-family: 'Courier New', monospace; font-weight: bold; }
+
+        /* --- KMZ COPYRIGHT FOOTER --- */
+        .kmz-footer {
+            text-align: center;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            opacity: 0.5;
+            padding: 5px;
+            margin-top: 10px;
+        }
+
+    </style>
+</head>
+<!-- Bloqueio de Clique Direito -->
+<body oncontextmenu="return false;">
+
+    <header>
+        <svg style="width:24px;height:24px;fill:var(--primary);" viewBox="0 0 24 24"><path d="M13,2L3,14H12L11,22L21,10H12L13,2Z" /></svg>
+        <h1>EletroNIC</h1>
+    </header>
+
+    <main>
+        <!-- SEÇÃO 1: SIMULADOR -->
+        <section id="section-gates" class="view-section active">
+            <h2>Simulador</h2>
+            <div class="card">
+                <label>Escolha a Porta Lógica</label>
+                <select id="gate-selector" onchange="updateGateLogic()">
+                    <option value="AND">AND (E)</option>
+                    <option value="OR">OR (OU)</option>
+                    <option value="NOT">NOT (NÃO)</option>
+                    <option value="NAND">NAND</option>
+                    <option value="NOR">NOR</option>
+                    <option value="XOR">XOR</option>
+                    <option value="XNOR">XNOR</option>
+                </select>
+                
+                <div class="gate-visualizer">
+                    <div class="io-row">
+                        <div class="io-ctrl">
+                            <label class="switch"><input type="checkbox" id="inputA" onchange="updateGateLogic()"><span class="slider"></span></label>
+                            <span style="font-weight:bold; color:var(--text-muted)">Entrada A</span>
+                        </div>
+                        
+                        <div id="gate-svg" style="width:120px; height:70px; display:flex; align-items:center; justify-content:center;"></div>
+                        
+                        <div class="io-ctrl" id="inputB-container">
+                            <label class="switch"><input type="checkbox" id="inputB" onchange="updateGateLogic()"><span class="slider"></span></label>
+                            <span style="font-weight:bold; color:var(--text-muted)">Entrada B</span>
+                        </div>
+                    </div>
+                    
+                    <div style="text-align: center; background: var(--bg); padding: 15px; border-radius: 12px; border: 1px solid var(--border); width: 100%;">
+                        <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom: 8px; text-transform:uppercase; letter-spacing:1px;">Resultado da Saída</div>
+                        <div id="outputLed" style="width:50px; height:50px; border-radius:50%; background:#333; margin:0 auto; transition:0.3s; box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);"></div>
+                        <div id="logic-text" style="color:var(--text); font-size:1.1rem; margin-top:10px; font-family:'Courier New', monospace; font-weight:bold;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="kmz-footer">© 2026 KMZ Technologies</div>
+        </section>
+
+        <!-- SEÇÃO 2: TABELA VERDADE -->
+        <section id="section-table" class="view-section">
+            <h2>Tabela Verdade</h2>
+            <div class="card">
+                <div class="flex-between" style="margin-bottom:10px;">
+                    <label style="margin:0;">Tipo de Entrada</label>
+                    <select id="tt-mode" onchange="toggleTableMode()" style="width:140px; padding:8px; margin:0;">
+                        <option value="simple">Porta Única</option>
+                        <option value="custom">Expressão Livre</option>
+                    </select>
+                </div>
+
+                <div id="mode-simple-controls">
+                    <select id="tt-type" onchange="generateTruthTable()">
+                        <option value="AND">A E B (AND)</option>
+                        <option value="OR">A OU B (OR)</option>
+                        <option value="XOR">A XOR B</option>
+                        <option value="NAND">A NAND B</option>
+                        <option value="NOR">A NOR B</option>
+                    </select>
+                </div>
+
+                <div id="mode-custom-controls" class="hidden">
+                    <div style="display:flex; gap:8px;">
+                        <input type="text" id="custom-expression" placeholder="Use o teclado abaixo..." readonly onclick="this.removeAttribute('readonly')" style="margin:0;">
+                        <button class="btn btn-danger" style="width:auto; margin:0; padding:0 15px;" onclick="document.getElementById('custom-expression').value=''">Limpar</button>
+                    </div>
+                    
+                    <div class="keyboard-grid">
+                        <button class="key-btn var" onclick="ins('A')">A</button><button class="key-btn var" onclick="ins('B')">B</button><button class="key-btn var" onclick="ins('C')">C</button><button class="key-btn var" onclick="ins('D')">D</button>
+                        <button class="key-btn op" onclick="ins('+')">OU</button><button class="key-btn op" onclick="ins('*')">E</button><button class="key-btn op" onclick="ins('\'')">NÃO</button><button class="key-btn del" onclick="backspace()">⌫</button>
+                        <button class="key-btn complex" onclick="ins('\u2295')">XOR</button><button class="key-btn complex" onclick="ins('\u2299')">XNOR</button><button class="key-btn complex" onclick="ins('\u22BC')">NAND</button><button class="key-btn complex" onclick="ins('\u22BD')">NOR</button>
+                        <button class="key-btn" onclick="ins('(')">(</button><button class="key-btn" onclick="ins(')')">)</button><div style="grid-column:span 2"></div>
+                    </div>
+                    
+                    <div class="btn-row">
+                        <button class="btn" onclick="generateTruthTable()">Criar Tabela</button>
+                        <button class="btn btn-outline" onclick="sendToKMap()">Enviar para Mapa K</button>
+                    </div>
+                    <button class="btn btn-success" style="margin-top:10px;" onclick="sendToCircuit('custom')">Ver Circuito</button>
+                    <div id="expression-error" style="color:var(--danger); display:none; font-size:0.9rem; margin-top:10px; text-align:center; background:rgba(239, 68, 68, 0.1); padding:8px; border-radius:8px;">Expressão inválida!</div>
+                </div>
+
+                <div class="table-container">
+                    <table class="truth-table" id="truth-table-display"></table>
+                </div>
+                
+                <!-- BOTÃO PARA PRINT -->
+                <button class="btn btn-outline" style="margin-top:10px; font-size:0.9rem;" onclick="exportTableImage()">📷 Visualizar p/ Print</button>
+            </div>
+        </section>
+
+        <!-- SEÇÃO 3: MAPA DE KARNAUGH -->
+        <section id="section-kmap" class="view-section">
+            <h2>Mapa de Karnaugh</h2>
+            <div class="card">
+                <div class="flex-between" style="margin-bottom:15px;">
+                    <label style="margin:0;">Qtd. Variáveis</label>
+                    <select id="kmap-vars" onchange="initKMapGrid()" style="width:120px; padding:8px; margin:0;">
+                        <option value="4">4 (ABCD)</option>
+                        <option value="3">3 (ABC)</option>
+                        <option value="2">2 (AB)</option>
+                    </select>
+                </div>
+                
+                <div class="kmap-wrapper">
+                    <div id="kmap-container" class="kmap-grid vars-4"></div>
+                </div>
+                
+                <button class="btn btn-success" onclick="solveKMap()">Resolver Mapa</button>
+                
+                <div style="margin-top:20px;">
+                    <span style="font-size:0.85rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; font-weight:bold;">Resultado Simplificado</span>
+                    <div class="equation-box" id="kmap-equation-text">Y = 0</div>
+                    <p class="equation-hint">👆 Toque nos termos acima para ver o agrupamento no mapa</p>
+                </div>
+                
+                <div class="btn-row">
+                    <button class="btn btn-outline" onclick="sendCalculatedToTable()">Copiar para Tabela</button>
+                    <button class="btn btn-outline" onclick="initKMapGrid()">Limpar Tudo</button>
+                </div>
+                <button class="btn" style="margin-top:10px;" onclick="sendToCircuit('kmap')">Criar Circuito</button>
+            </div>
+        </section>
+
+        <!-- SEÇÃO 4: DIAGRAMA LÓGICO -->
+        <section id="section-circuit" class="view-section">
+            <h2>Diagrama Lógico</h2>
+            <div class="card">
+                <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:10px;">Expressão Atual: <span id="circuit-expression-display" style="color:var(--primary); font-family:'Courier New'; font-weight:bold;"></span></p>
+                <div class="canvas-container">
+                    <canvas id="circuit-canvas"></canvas>
+                </div>
+                <!-- BOTÃO PARA PRINT -->
+                <button class="btn btn-outline" style="margin-top:15px;" onclick="exportCircuitImage()">📷 Visualizar p/ Print</button>
+                <p style="font-size:0.75rem; color:var(--text-muted); margin-top:10px; text-align:center;">
+                    <span style="display:inline-block; width:8px; height:8px; background:var(--primary); border-radius:50%;"></span> Conexão &nbsp;
+                    <span style="display:inline-block; width:8px; height:8px; background:#fff; border:1px solid #000; border-radius:50%;"></span> Inversor
+                </p>
+            </div>
+        </section>
+
+        <!-- SEÇÃO 5: CALCULADORA -->
+        <section id="section-calc" class="view-section">
+            <h2>Calculadora</h2>
+            
+            <div class="card">
+                <h3>Conversor Rápido</h3>
+                <div class="conv-row"><span class="conv-label">DEC</span><input type="text" id="in-dec" oninput="convertBase('dec')" placeholder="Decimal (0-9)"></div>
+                <div class="conv-row"><span class="conv-label">BIN</span><input type="text" id="in-bin" oninput="convertBase('bin')" placeholder="Binário (0-1)"></div>
+                <div class="conv-row"><span class="conv-label">OCT</span><input type="text" id="in-oct" oninput="convertBase('oct')" placeholder="Octal (0-7)"></div>
+                <div class="conv-row"><span class="conv-label">HEX</span><input type="text" id="in-hex" oninput="convertBase('hex')" placeholder="Hexa (0-F)"></div>
+                <button class="btn btn-outline" onclick="clearConv()">Limpar Campos</button>
+            </div>
+
+            <div class="card">
+                <h3>Cálculos</h3>
+                <div class="calc-input-group">
+                    <input type="text" id="calc-a" placeholder="Valor A" oninput="filterCalc(this, 'base-a')">
+                    <select id="base-a" onchange="filterCalc(document.getElementById('calc-a'), 'base-a')" style="width:90px; margin:0;">
+                        <option value="2">BIN</option><option value="10" selected>DEC</option><option value="8">OCT</option><option value="16">HEX</option>
+                    </select>
+                </div>
+                
+                <div style="display:flex; justify-content:center; margin-bottom:12px; gap:8px;">
+                    <select id="calc-op" style="width:80px; text-align:center; font-weight:bold; font-size:1.2rem; margin:0;">
+                        <option value="+">+</option><option value="-">-</option><option value="*">×</option><option value="/">÷</option>
+                    </select>
+                </div>
+
+                <div class="calc-input-group">
+                    <input type="text" id="calc-b" placeholder="Valor B" oninput="filterCalc(this, 'base-b')">
+                    <select id="base-b" onchange="filterCalc(document.getElementById('calc-b'), 'base-b')" style="width:90px; margin:0;">
+                        <option value="2" selected>BIN</option><option value="10">DEC</option><option value="8">OCT</option><option value="16">HEX</option>
+                    </select>
+                </div>
+                
+                <button class="btn btn-success" onclick="calcUniversal()">Calcular</button>
+                
+                <div id="calc-results" style="margin-top:20px; display:none; background:var(--bg); padding:15px; border-radius:12px; border:1px solid var(--border);">
+                    <div class="res-row"><span>Decimal:</span><span id="res-dec"></span></div>
+                    <div class="res-row"><span>Binário:</span><span id="res-bin"></span></div>
+                    <div class="res-row"><span>Octal:</span><span id="res-oct"></span></div>
+                    <div class="res-row"><span>Hexa:</span><span id="res-hex"></span></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SEÇÃO 6: CHIPS -->
+        <section id="section-chips" class="view-section">
+            <h2>Pinagem (Chips TTL)</h2>
+            <div class="card">
+                <select id="chip-selector" onchange="drawChip()">
+                    <option value="7408">7408 - AND (4 portas)</option>
+                    <option value="7432">7432 - OR (4 portas)</option>
+                    <option value="7404">7404 - NOT (6 portas)</option>
+                    <option value="7400">7400 - NAND (4 portas)</option>
+                    <option value="7402">7402 - NOR (4 portas)</option>
+                    <option value="7486">7486 - XOR (4 portas)</option>
+                    <option value="74266">74266 - XNOR (4 portas)</option>
+                </select>
+                <div class="canvas-container" style="background: linear-gradient(to bottom, #e2e8f0, #cbd5e1);">
+                    <canvas id="chip-canvas"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- SEÇÃO 7: AJUDA & CONTATO -->
+        <section id="section-manual" class="view-section">
+            <h2>Ajuda & Contato</h2>
+            <div class="card">
+                <div style="text-align:center; padding: 20px 0;">
+                    <h3 style="color:var(--primary); font-size: 1.5rem;">EletroNIC</h3>
+                    <p style="color:var(--text-muted);">Versão 1.0 (KMZ Release)</p>
+                </div>
+                
+                <details>
+                    <summary>1. Simulador Básico</summary>
+                    <div class="manual-content">
+                        O <strong>Simulador</strong> permite testar o comportamento de portas lógicas individuais.<br><br>
+                        1. Selecione a porta (ex: AND, OR).<br>
+                        2. Toque nos interruptores (Switches) para mudar as entradas entre 0 e 1.<br>
+                        3. Observe o LED e o diagrama mudarem de cor (Verde = Ligado/1, Cinza = Desligado/0).
+                    </div>
+                </details>
+
+                <details>
+                    <summary>2. Tabela Verdade & Expressões</summary>
+                    <div class="manual-content">
+                        Gere tabelas verdade completas para qualquer lógica.<br><br>
+                        <strong>Modo Expresso Livre:</strong> Use o teclado especial para digitar equações como <code>(A+B)*C</code> ou <code>A ⊕ B</code>. 
+                        O app gera todas as combinações de entrada (000 a 111) e mostra a saída.<br><br>
+                        <strong>Dica:</strong> Você pode enviar a expressão direto para o Mapa de Karnaugh ou ver o Circuito.
+                    </div>
+                </details>
+
+                <details>
+                    <summary>3. Mapa de Karnaugh (K-Map)</summary>
+                    <div class="manual-content">
+                        Ferramenta para simplificar lógica booleana.<br><br>
+                        1. Escolha o número de variáveis (2, 3 ou 4).<br>
+                        2. Toque nas células para alternar entre <strong>0</strong>, <strong>1</strong> e <strong>X</strong> (Don't Care).<br>
+                        3. Clique em <strong>Resolver Mapa</strong>. O app encontrará a equação mais simples possível, priorizando grupos maiores (Oitavas > Quadras > Pares).
+                        <br>4. <strong>Interatividade:</strong> Toque nos termos da equação resultante para ver quais células do mapa foram agrupadas!
+                    </div>
+                </details>
+
+                <details>
+                    <summary>4. Desenhista de Circuitos</summary>
+                    <div class="manual-content">
+                        Cria automaticamente o esquema elétrico (diagrama) a partir de uma expressão.<br><br>
+                        - Suporta portas AND, OR, NOT, XOR, XNOR.<br>
+                        - Desenha em "Cascata": Se houver muitas entradas, ele conecta portas em sequência de forma organizada.<br>
+                        - Linhas retas e organizadas (padrão industrial).<br>
+                        - <strong>Exportar:</strong> Use o botão "Visualizar p/ Print" para expandir o circuito e tirar um print da tela.
+                    </div>
+                </details>
+
+                <details>
+                    <summary>5. Calculadora de Bases</summary>
+                    <div class="manual-content">
+                        Realize conversões e contas entre bases numéricas.<br><br>
+                        - Digite em qualquer campo (DEC, BIN, OCT, HEX) para converter instantaneamente.<br>
+                        - Use a calculadora abaixo para somar, subtrair, multiplicar ou dividir números de bases diferentes (ex: Binário + Hexadecimal).
+                    </div>
+                </details>
+                
+                <div style="margin-top:30px; padding-top:20px; border-top:1px solid var(--border);">
+                    <h3 style="color:var(--primary); margin-bottom:15px;">Suporte & Contato</h3>
+                    <p style="color:var(--text-muted); margin-bottom:15px; font-size:0.9rem;">
+                        Encontrou um bug ou tem uma sugestão? Entre em contato diretamente com o desenvolvedor:
+                    </p>
+                    
+                    <div class="contact-item">
+                        <svg viewBox="0 0 24 24"><path d="M20,8L12,13L4,8V6L12,11L20,6M20,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V6C22,4.89 21.1,4 20,4Z" /></svg>
+                        <div>
+                            <div class="contact-label">E-mail</div>
+                            <div class="contact-value">kmzsuportt1@gmail.com</div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top:20px; text-align:center;">
+                        <span style="display:block; color:var(--text-muted); font-size:0.9rem; margin-bottom:4px;">Desenvolvedor</span>
+                        <strong style="font-size:1.2rem; color:var(--primary);">Kauã Mazur dos Reis (KMZ)</strong>
+                        <div style="font-size:0.8rem; color:var(--text-muted); margin-top:5px;">© 2026 Todos os direitos reservados</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <nav>
+        <button class="nav-btn active" onclick="switchTab('gates', this)"><svg viewBox="0 0 24 24"><path d="M9,2C5.93,2 4.14,3.23 3.09,4.92L11,17.18L18.91,4.92C17.86,3.23 16.07,2 13,2H9M6,20A2,2 0 0,0 8,22H14A2,2 0 0,0 16,20V19H6V20Z"/></svg>Sim</button>
+        <button class="nav-btn" onclick="switchTab('table', this)"><svg viewBox="0 0 24 24"><path d="M4,3H20A2,2 0 0,1 22,5V20A2,2 0 0,1 20,22H4A2,2 0 0,1 2,20V5A2,2 0 0,1 4,3M4,7V10H8V7H4M10,7V10H14V7H10M20,10V7H16V10H20M4,12V15H8V12H4M4,20H8V17H4V20M10,12V15H14V12H10M10,20H14V17H10V20M20,20V17H16V20H20M20,12H16V15H20V12Z"/></svg>Tab</button>
+        <button class="nav-btn" onclick="switchTab('kmap', this)"><svg viewBox="0 0 24 24"><path d="M3,3H21V21H3V3M5,5V19H19V5H5M7,7H17V9H7V7M7,11H17V13H7V11M7,15H17V17H7V15Z"/></svg>Map</button>
+        <button class="nav-btn" onclick="switchTab('circuit', this)"><svg viewBox="0 0 24 24"><path d="M15,9A1,1 0 0,1 16,8A1,1 0 0,1 17,9A1,1 0 0,1 16,10A1,1 0 0,1 15,9M11,9A1,1 0 0,1 12,8A1,1 0 0,1 13,9A1,1 0 0,1 12,10A1,1 0 0,1 11,9M7,9A1,1 0 0,1 8,8A1,1 0 0,1 9,9A1,1 0 0,1 8,10A1,1 0 0,1 7,9M19,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5A2,2 0 0,0 19,3M19,19H5V5H19V19Z"/></svg>Circ</button>
+        <button class="nav-btn" onclick="switchTab('calc', this)"><svg viewBox="0 0 24 24"><path d="M7,2H17A2,2 0 0,1 19,4V20A2,2 0 0,1 17,22H7A2,2 0 0,1 5,20V4A2,2 0 0,1 7,2M7,4V8H17V4H7M7,10V12H9V10H7M11,10V12H13V10H11M15,10V12H17V10H15M7,14V16H9V14H7M11,14V16H13V14H11M15,14V16H17V14H15M7,18V20H9V18H7M11,18V20H13V18H11M15,18V20H17V18H15Z"/></svg>Calc</button>
+        <button class="nav-btn" onclick="switchTab('chips', this)"><svg viewBox="0 0 24 24"><path d="M9,2H15V4H9V2M3,6H21V20H3V6M5,8V18H19V8H5M7,10H9V12H7V10M11,10H13V12H11V10M15,10H17V12H15V10Z"/></svg>Chip</button>
+        <button class="nav-btn" onclick="switchTab('manual', this)"><svg viewBox="0 0 24 24"><path d="M11,18H13V16H11V18M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,20C7.59,20 4,16.41 4,12C4,7.59 7.59,4 12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20M12,6A4,4 0 0,0 8,10H10A2,2 0 0,1 12,8A2,2 0 0,1 14,10C14,12 11,11.75 11,15H13C13,12.75 16,12.5 16,10A4,4 0 0,0 12,6Z"/></svg>Ajuda</button>
+    </nav>
+    
+    <!-- MODAL DE EXPORTAÇÃO EXPANDIDO -->
+    <div id="export-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <div class="modal-header-text">Tire um Print para Salvar - KMZ App</div>
+            <img id="modal-img" src="" />
+        </div>
+    </div>
+
+    <script>
+        // --- GLOBAL STATE ---
+        let lastCalculatedEquation = "";
+        console.log("EletroNIC Iniciado. Copyright © 2026 KMZ. Todos os direitos reservados.");
+
+        // --- UI & TAB SWITCHING ---
+        function switchTab(tabId, btn) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById('section-' + tabId).classList.add('active');
+            if(btn) btn.classList.add('active');
+            if(tabId==='chips') drawChip();
+        }
+        function toggleTableMode() {
+            const mode = document.getElementById('tt-mode').value;
+            document.getElementById('mode-simple-controls').classList.toggle('hidden', mode !== 'simple');
+            document.getElementById('mode-custom-controls').classList.toggle('hidden', mode !== 'custom');
+            if(mode === 'simple') generateTruthTable();
+        }
+        function ins(txt) { document.getElementById('custom-expression').value += txt; }
+        function backspace() { const i = document.getElementById('custom-expression'); i.value = i.value.slice(0, -1); }
+        
+        // --- MODAL SYSTEM ---
+        function showImageModal(dataUrl) {
+            const modal = document.getElementById('export-modal');
+            const img = document.getElementById('modal-img');
+            img.src = dataUrl;
+            modal.classList.add('visible');
+            
+            // App Inventor Extension Hook (Opcional)
+            if(window.AppInventor && window.AppInventor.setWebViewString) {
+                window.AppInventor.setWebViewString("IMAGE:" + dataUrl);
+            }
+        }
+        function closeModal() {
+            document.getElementById('export-modal').classList.remove('visible');
+        }
+
+        // --- SIMULATOR LOGIC ---
+        function updateGateLogic() {
+            const gate = document.getElementById('gate-selector').value;
+            const a = document.getElementById('inputA').checked, b = document.getElementById('inputB').checked;
+            document.getElementById('inputB-container').style.opacity = gate === 'NOT' ? '0.2' : '1';
+            let res = false;
+            if(gate==='AND') res=a&&b; else if(gate==='OR') res=a||b; else if(gate==='NOT') res=!a;
+            else if(gate==='NAND') res=!(a&&b); else if(gate==='NOR') res=!(a||b); else if(gate==='XOR') res=a!==b; else if(gate==='XNOR') res=a===b;
+            const led = document.getElementById('outputLed');
+            led.style.backgroundColor = res ? 'var(--success)' : '#333';
+            led.style.boxShadow = res ? '0 0 20px var(--success)' : 'inset 0 2px 5px rgba(0,0,0,0.5)';
+            document.getElementById('logic-text').innerHTML = `<span style="color:var(--accent)">${a?1:0}</span> ${gate} <span style="color:var(--accent)">${gate==='NOT'?'':(b?1:0)}</span> = <span style="color:${res?'var(--success)':'var(--danger)'}">${res?1:0}</span>`;
+            
+            let svg = `<svg viewBox="0 0 100 60" style="width:100%;height:100%"><defs><filter id="glow"><feGaussianBlur stdDeviation="1.5" result="coloredBlur"/><feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>`;
+            svg += `<path d="M10,20 L30,20" stroke="var(--text-muted)" stroke-width="2"/>`;
+            if(gate!=='NOT') svg += `<path d="M10,40 L30,40" stroke="var(--text-muted)" stroke-width="2"/>`;
+            svg += `<text x="50" y="35" fill="var(--primary)" font-weight="bold" font-family="Arial" text-anchor="middle" dominant-baseline="middle" font-size="14">${gate}</text>`;
+            svg += `<rect x="30" y="10" width="40" height="40" rx="5" fill="none" stroke="var(--primary)" stroke-width="2" filter="url(#glow)"/>`;
+            svg += `<path d="M70,30 L90,30" stroke="${res?'var(--success)':'var(--text-muted)'}" stroke-width="2"/>`;
+            svg += `</svg>`;
+            document.getElementById('gate-svg').innerHTML = svg;
+        }
+
+        // --- CALCULATOR & BASE CONVERTER ---
+        function parseAnyBase(str, base) {
+            str = str.replace(',','.'); if(!str) return NaN;
+            const parts = str.split('.'); let val = parseInt(parts[0], base);
+            if (parts.length > 1) {
+                let frac = 0; for(let i=0; i<parts[1].length; i++) { const digit = parseInt(parts[1][i], base); if(!isNaN(digit)) frac += digit * Math.pow(base, -(i+1)); }
+                val += frac;
+            } return val;
+        }
+        function formatAnyBase(num, base) {
+            if(isNaN(num)) return "";
+            let intPart = Math.floor(num), fracPart = num - intPart, res = intPart.toString(base).toUpperCase();
+            if(fracPart > 0.000001) { res += ","; let limit = 8; while(fracPart > 0.000001 && limit > 0) { fracPart *= base; let digit = Math.floor(fracPart); res += digit.toString(base).toUpperCase(); fracPart -= digit; limit--; } }
+            return res;
+        }
+        function filterCalc(input, baseId) {
+            const base = document.getElementById(baseId).value;
+            let regex = (base === '2') ? /[^01,.]/g : (base === '10') ? /[^0-9,.]/g : /[^0-9A-Fa-f,.]/g;
+            input.value = input.value.replace(regex, '').replace('.',',');
+        }
+        function calcUniversal() {
+            const baseA = parseInt(document.getElementById('base-a').value), baseB = parseInt(document.getElementById('base-b').value);
+            const valA = parseAnyBase(document.getElementById('calc-a').value, baseA), valB = parseAnyBase(document.getElementById('calc-b').value, baseB);
+            if(isNaN(valA) || isNaN(valB)) return;
+            const op = document.getElementById('calc-op').value;
+            let res = (op === '+') ? valA+valB : (op === '-') ? valA-valB : (op === '*') ? valA*valB : (valB!==0?valA/valB:0);
+            document.getElementById('calc-results').style.display = 'block';
+            document.getElementById('res-dec').innerText = formatAnyBase(res, 10);
+            document.getElementById('res-bin').innerText = formatAnyBase(res, 2);
+            document.getElementById('res-hex').innerText = formatAnyBase(res, 16);
+        }
+        function convertBase(type) {
+            const ids = {dec:'in-dec', bin:'in-bin', oct:'in-oct', hex:'in-hex'};
+            let raw = document.getElementById(ids[type]).value.trim();
+            if(!raw) { for(let k in ids) if(k!==type) document.getElementById(ids[k]).value=""; return; }
+            let num = parseAnyBase(raw, type==='bin'?2:type==='oct'?8:type==='hex'?16:10);
+            if(type!=='dec') document.getElementById(ids.dec).value = formatAnyBase(num, 10);
+            if(type!=='bin') document.getElementById(ids.bin).value = formatAnyBase(num, 2);
+            if(type!=='oct') document.getElementById(ids.oct).value = formatAnyBase(num, 8);
+            if(type!=='hex') document.getElementById(ids.hex).value = formatAnyBase(num, 16);
+        }
+        function clearConv() { ['in-dec','in-bin','in-oct','in-hex'].forEach(id=>document.getElementById(id).value=""); }
+
+        // --- TRUTH TABLE & PARSING LOGIC ---
+        function parseExpression(expr, ctx) {
+            try {
+                let clean = expr.toUpperCase().replace(/\s+/g, ''); if(!clean) return null;
+                // Constants support
+                if(clean === '0') return false;
+                if(clean === '1') return true;
+
+                clean = clean.replace(/([A-D])\'/g, '!$1');
+                
+                const atom = "!?(?:[A-D]|[0-1]|\\([^)]+\\))";
+                while(clean.includes('\u22BC')) clean = clean.replace(new RegExp(`(${atom})\u22BC(${atom})`), '!($1&&$2)');
+                while(clean.includes('\u22BD')) clean = clean.replace(new RegExp(`(${atom})\u22BD(${atom})`), '!($1||$2)');
+                
+                clean = clean.replace(/([A-D\)])(?=[A-D\(!])/g, '$1&&'); 
+                clean = clean.replace(/\u2295/g, '!==').replace(/\u2299/g, '===');
+                clean = clean.replace(/\+/g, '||').replace(/\*/g, '&&').replace(/\^/g, '!==');
+                
+                for(let v of ['A','B','C','D']) clean = clean.split(v).join(ctx[v] ? 'true' : 'false');
+                if(/[^truefalse!&|()=!=>]/.test(clean)) return null;
+                return Function('"use strict";return (' + clean + ')')();
+            } catch(e) { return null; }
+        }
+
+        function generateTruthTable() {
+            const table = document.getElementById('truth-table-display'); table.innerHTML = "";
+            let vars = ['A','B'], expression = "";
+            if (document.getElementById('tt-mode').value === 'custom') {
+                expression = document.getElementById('custom-expression').value || "";
+                if(expression.trim() === "") return;
+                const foundVars = new Set();
+                ['A','B','C','D'].forEach(v => { if(expression.toUpperCase().includes(v)) foundVars.add(v); });
+                if(foundVars.size > 0) vars = Array.from(foundVars).sort();
+            }
+            let html = `<thead><tr>`; vars.forEach(v => html += `<th>${v}</th>`); html += `<th>S</th></tr></thead><tbody>`;
+            const rows = 1 << vars.length;
+            for(let i=0; i<rows; i++) {
+                let ctx = {A:0,B:0,C:0,D:0}, rowHtml = "";
+                for(let j=0; j<vars.length; j++) {
+                    const bit = (i >> (vars.length - 1 - j)) & 1; ctx[vars[j]] = bit; rowHtml += `<td>${bit}</td>`;
+                }
+                let res = 0;
+                if(document.getElementById('tt-mode').value === 'simple') {
+                    const t = document.getElementById('tt-type').value, a=ctx.A, b=ctx.B;
+                    if(t==='AND') res=a&&b; else if(t==='OR') res=a||b; else if(t==='XOR') res=(a?!b:b);
+                    else if(t==='NAND') res=!(a&&b); else if(t==='NOR') res=!(a||b);
+                } else {
+                    const er = parseExpression(expression, ctx);
+                    if(er===null) { document.getElementById('expression-error').style.display = 'block'; return; }
+                    document.getElementById('expression-error').style.display = 'none';
+                    res = er;
+                }
+                html += `<tr>${rowHtml}<td class="result-${res?1:0}">${res?1:0}</td></tr>`;
+            }
+            html += `</tbody>`; table.innerHTML = html;
+        }
+
+        // --- K-MAP SOLVER (Optimized: Octave > Quad > Pair + Wrap Fix) ---
+        let kmapData = new Array(16).fill(0), currentVars = 4;
+        let solutionGroups = []; 
+        const gray4 = [0, 1, 3, 2], gray2 = [0, 1];
+
+        function initKMapGrid() {
+            const numVars = parseInt(document.getElementById('kmap-vars').value); currentVars = numVars;
+            const container = document.getElementById('kmap-container'); container.className = `kmap-grid vars-${numVars}`; container.innerHTML = '';
+            kmapData.fill(0); document.getElementById('kmap-equation-text').innerText = "Y = 0"; solutionGroups = [];
+            lastCalculatedEquation = "0"; // Reset global
+            let rowsGray = numVars===4?gray4:gray2, colsGray = numVars===3?gray4:(numVars===4?gray4:gray2);
+            let label = numVars===4?"AB\\CD":(numVars===3?"A\\BC":"A\\B");
+            container.innerHTML += `<div class="kmap-corner">${label}</div>`;
+            (numVars>=3?['00','01','11','10']:['0','1']).forEach(l => container.innerHTML += `<div class="kmap-header">${l}</div>`);
+            (numVars===4?['00','01','11','10']:['0','1']).forEach((rLab, rIdx) => {
+                container.innerHTML += `<div class="kmap-header">${rLab}</div>`;
+                colsGray.forEach((cVal) => {
+                    const rVal = rowsGray[rIdx]; let minterm = 0;
+                    if(numVars===4) minterm=(rVal<<2)|cVal; else if(numVars===3) minterm=(rVal<<2)|cVal; else minterm=(rVal<<1)|cVal;
+                    container.innerHTML += `<div class="kmap-cell state-0" id="cell-${minterm}" onclick="toggleCell(${minterm})">0</div>`;
+                });
+            });
+        }
+        function toggleCell(idx) { 
+            kmapData[idx] = (kmapData[idx]+1)%3; 
+            const el = document.getElementById(`cell-${idx}`); 
+            el.className = 'kmap-cell'+(kmapData[idx]===1?' state-1':kmapData[idx]===2?' state-x':' state-0'); 
+            el.innerText = kmapData[idx]===2?'X':kmapData[idx]; 
+        }
+        
+        function highlightGroup(indices) {
+            document.querySelectorAll('.kmap-cell').forEach(c => c.classList.remove('educ-highlight'));
+            if(!indices) return;
+            indices.forEach(idx => {
+                const cell = document.getElementById(`cell-${idx}`);
+                if(cell) cell.classList.add('educ-highlight');
+            });
+        }
+
+        function solveKMap() {
+            const minterms = [], dontCares = [], maxM = 1 << currentVars;
+            for(let i=0; i<maxM; i++) { if(kmapData[i] === 1) minterms.push(i); if(kmapData[i] === 2) dontCares.push(i); }
+            
+            const eqBox = document.getElementById('kmap-equation-text');
+            if(minterms.length === 0) { 
+                eqBox.innerText = "Y = 0"; 
+                lastCalculatedEquation = "0"; 
+                solutionGroups=[]; return; 
+            }
+            if(minterms.length === maxM) { 
+                eqBox.innerText = "Y = 1"; 
+                lastCalculatedEquation = "1"; 
+                solutionGroups=[Array.from({length:maxM},(_,i)=>i)]; return; 
+            }
+            
+            const xorPattern = checkSemanticXor(minterms, currentVars);
+            if(xorPattern) { 
+                // CORREÇÃO: Torna o XOR clicável para iluminar todos os mintermos correspondentes
+                const ms = JSON.stringify(minterms);
+                eqBox.innerHTML = `Y = <span class="interactive-term" onclick="highlightGroup(${ms})">${xorPattern}</span>`;
+                lastCalculatedEquation = xorPattern; 
+                solutionGroups=[minterms]; // Salva para uso lógico se necessário
+                return; 
+            }
+            
+            const allGroups = findAllRectangles(minterms, dontCares, currentVars);
+            const primes = filterPrimes(allGroups);
+            const solution = selectMinimalCover(primes, minterms);
+            solutionGroups = solution.map(s => s.minterms); 
+
+            let terms = solution.map(g => formatTerm(g, currentVars));
+            let finalTerms = safeXorDetection(terms);
+            lastCalculatedEquation = finalTerms; // Store safe string
+
+            let html = "Y = ";
+            solution.forEach((group, idx) => {
+                const term = formatTerm(group, currentVars);
+                const mintermsStr = JSON.stringify(group.minterms);
+                html += `<span class="interactive-term" onclick="highlightGroup(${mintermsStr})">${term}</span>`;
+                if(idx < solution.length - 1) html += " + ";
+            });
+            eqBox.innerHTML = html;
+        }
+
+        // Quine-McCluskey Core Logic
+        function findAllRectangles(ones, dcs, vars) {
+            const target = new Set([...ones, ...dcs]), groups = [], R = (vars === 4) ? 4 : 2, C = (vars === 2) ? 2 : 4;
+            const mapRC = (r, c) => { const rG = (vars===4)?gray4[r]:gray2[r], cG = (vars===2)?gray2[c]:gray4[c]; return (vars===4)?(rG<<2)|cG : (vars===3?(rG<<2)|cG:(rG<<1)|cG); };
+            const sizes = [16, 8, 4, 2, 1].filter(s => s <= (1<<vars)); 
+            for(let size of sizes) {
+                for(let h=1; h<=size; h++) {
+                    if(size%h===0) {
+                        const w = size/h;
+                        if(h <= R && w <= C) {
+                             for(let r=0; r<R; r++) {
+                                for(let c=0; c<C; c++) {
+                                    const ms = []; let ok = true;
+                                    for(let i=0; i<h; i++) {
+                                        for(let j=0; j<w; j++) {
+                                            const m = mapRC((r+i)%R, (c+j)%C);
+                                            if(!target.has(m)) { ok = false; break; }
+                                            ms.push(m);
+                                        } if(!ok) break;
+                                    } if(ok) { ms.sort((a,b)=>a-b); groups.push({minterms:ms, size:size}); }
+                                }
+                             }
+                        }
+                    }
+                }
+            } return groups;
+        }
+        function filterPrimes(groups) {
+            const unique = [], seen = new Set();
+            for(let g of groups) { const k = g.minterms.join(','); if(!seen.has(k)) { seen.add(k); unique.push(g); } }
+            unique.sort((a,b)=>b.size - a.size);
+            const primes = [];
+            for(let i=0; i<unique.length; i++) {
+                let sub = false;
+                for(let j=0; j<unique.length; j++) {
+                    if(i===j) continue;
+                    if(unique[j].size > unique[i].size) {
+                         const sJ = new Set(unique[j].minterms);
+                         if(unique[i].minterms.every(m=>sJ.has(m))) { sub=true; break; }
+                    }
+                } if(!sub) primes.push(unique[i]);
+            } return primes;
+        }
+        
+        // CORREÇÃO CRÍTICA DO ALGORITMO: Priorização de agrupamentos que "dão a volta"
+        function selectMinimalCover(primes, req) {
+             // Ordena por tamanho (decrescente), depois por "envolvimento" (isWrap)
+            primes.sort((a,b) => {
+                if (b.size !== a.size) return b.size - a.size;
+                // Se tamanho igual, prefere o que dá a volta nas bordas (estética melhor e evita separar cantos)
+                const aWrap = isGroupWrapping(a.minterms);
+                const bWrap = isGroupWrapping(b.minterms);
+                return (bWrap ? 1 : 0) - (aWrap ? 1 : 0);
+            });
+            
+            let sel = [], todo = new Set(req);
+            while(todo.size > 0) {
+                let best=null, bestSize=-1, bestCount=-1;
+                for(let p of primes) {
+                    // if(sel.includes(p)) continue; // não precisa pois removemos do todo
+                    let count=0; for(let m of p.minterms) if(todo.has(m)) count++;
+                    if (count > 0) {
+                         // Strict priority: Size > Count > Wrap
+                        if (p.size > bestSize) { best = p; bestSize = p.size; bestCount = count; } 
+                        else if (p.size === bestSize) { 
+                             if (count > bestCount) { best = p; bestCount = count; }
+                             else if (count === bestCount && isGroupWrapping(p.minterms)) { best = p; } // Desempate pelo wrap
+                        }
+                    }
+                }
+                if(best) { sel.push(best); best.minterms.forEach(x=>todo.delete(x)); } else break;
+            } return sel;
+        }
+
+        function isGroupWrapping(minterms) {
+            if(minterms.length < 2) return false;
+            let min = Math.min(...minterms);
+            let max = Math.max(...minterms);
+            // Heurística simples: se a distância entre índices for grande, provavelmente deu a volta no grid
+            return (max - min) > (minterms.length * 1.5); 
+        }
+
+        function formatTerm(g, vars) {
+            if(g.size === (1<<vars)) return "1";
+            let t = ""; const n = ['A','B','C','D'];
+            for(let b=0; b<vars; b++) {
+                const s = vars - 1 - b; const f = (g.minterms[0] >> s) & 1; let same = true;
+                for(let i=1; i<g.minterms.length; i++) if(((g.minterms[i]>>s)&1)!==f) { same=false; break; }
+                if(same) t += (f ? n[b] : n[b]+"'");
+            } return t;
+        }
+        function checkSemanticXor(activeMinterms, vars) {
+            const vNames = ['A','B','C','D'].slice(0, vars); const maxVal = 1 << vars; const targetSet = new Set(activeMinterms);
+            for(let mask = 1; mask < maxVal; mask++) {
+                let matchXor = true, matchXnor = true;
+                for(let i=0; i<maxVal; i++) {
+                    let xorVal = 0;
+                    for(let bit=0; bit<vars; bit++) if((mask >> (vars - 1 - bit)) & 1) xorVal ^= (i >> (vars - 1 - bit)) & 1;
+                    const isOne = targetSet.has(i);
+                    if( (xorVal === 1) !== isOne ) matchXor = false; if( (xorVal === 0) !== isOne ) matchXnor = false;
+                }
+                if(matchXor || matchXnor) {
+                    let parts = []; for(let bit=0; bit<vars; bit++) if((mask >> (vars - 1 - bit)) & 1) parts.push(vNames[bit]);
+                    let str = parts.join(" ⊕ "); if(matchXnor) str = `(${str})'`; return str;
+                }
+            } return null;
+        }
+        function safeXorDetection(terms) {
+            const parseTerm = (t) => { const map = {}; const matches = t.matchAll(/([A-D])('?)/g); for (const match of matches) map[match[1]] = (match[2] === "'") ? 0 : 1; return map; };
+            let changed = true; let currentTerms = [...terms];
+            while(changed) {
+                changed = false; let nextTerms = []; let usedIndices = new Set();
+                for (let i = 0; i < currentTerms.length; i++) {
+                    if (usedIndices.has(i)) continue; let merged = false;
+                    for (let j = i + 1; j < currentTerms.length; j++) {
+                        if (usedIndices.has(j)) continue;
+                        const t1 = parseTerm(currentTerms[i]), t2 = parseTerm(currentTerms[j]);
+                        const keys1 = Object.keys(t1).sort(), keys2 = Object.keys(t2).sort();
+                        if (JSON.stringify(keys1) !== JSON.stringify(keys2)) continue;
+                        let diffs = [], common = [];
+                        for (let k of keys1) { if (t1[k] !== t2[k]) diffs.push(k); else common.push({key: k, val: t1[k]}); }
+                        if (diffs.length === 2) {
+                            const v1 = diffs[0], v2 = diffs[1], sum1 = t1[v1] + t1[v2], sum2 = t2[v1] + t2[v2];
+                            let op = ""; if (sum1 === 1 && sum2 === 1) op = "\u2295"; else if ((sum1===0 && sum2===2) || (sum1===2 && sum2===0)) op = "\u2299";
+                            if (op) {
+                                let newTerm = `(${v1}${op}${v2})`;
+                                if (common.length > 0) { let commonStr = common.map(o => o.val ? o.key : o.key+"'").join(""); newTerm = commonStr + newTerm; }
+                                nextTerms.push(newTerm); usedIndices.add(i); usedIndices.add(j); merged = true; changed = true; break;
+                            }
+                        }
+                    } if (!merged) nextTerms.push(currentTerms[i]);
+                } if (changed) currentTerms = nextTerms;
+            } return currentTerms.join(" + ");
+        }
+
+        // --- INTERGRAÇÃO ---
+        function sendToKMap() {
+            const expr = document.getElementById('custom-expression').value; if(!expr) return;
+            const targetVars = expr.includes('D')?4:expr.includes('C')?3:2;
+            document.getElementById('kmap-vars').value = targetVars; initKMapGrid();
+            for(let i=0; i<(1<<targetVars); i++) {
+                let ctx = {A:0,B:0,C:0,D:0}; for(let v=0;v<targetVars;v++) ctx[['A','B','C','D'][v]] = (i>>(targetVars-1-v))&1;
+                if(parseExpression(expr, ctx)) { kmapData[i]=1; document.getElementById('cell-'+i).classList.remove('state-0'); document.getElementById('cell-'+i).classList.add('state-1'); document.getElementById('cell-'+i).innerText='1'; }
+            }
+            solveKMap(); document.querySelectorAll('.nav-btn')[2].click();
+        }
+        function sendCalculatedToTable() {
+            // Use global variable instead of parsing DOM
+            let eq = lastCalculatedEquation;
+            if(!eq) eq = "0";
+            
+            // Clean Y = prefix just in case
+            if(eq.startsWith("Y = ")) eq = eq.substring(4);
+
+            document.getElementById('tt-mode').value = 'custom'; toggleTableMode();
+            document.getElementById('custom-expression').value = eq;
+            document.querySelectorAll('.nav-btn')[1].click(); generateTruthTable();
+        }
+
+        // --- DRAWING ENGINE ---
+        function sendToCircuit(s) {
+            // Priority: if s is kmap, use global variable
+            let e = "";
+            if (s === 'kmap') {
+                e = lastCalculatedEquation;
+                if(!e) e = "0";
+            } else {
+                e = document.getElementById('custom-expression').value;
+            }
+            if(e.startsWith("Y = ")) e = e.substring(4);
+            
+            document.getElementById('circuit-expression-display').innerText = e;
+            document.querySelectorAll('.nav-btn')[3].click(); setTimeout(()=>drawCircuit(e), 100);
+        }
+        
+        function drawCircuit(expr) {
+            const canvas = document.getElementById('circuit-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Clean & Parse
+            let clean = expr.replace(/\s/g, '');
+            if(clean==='0'||clean==='1') { 
+                ctx.canvas.width=350; ctx.canvas.height=200; ctx.clearRect(0,0,350,200);
+                ctx.font="bold 20px Arial"; ctx.fillStyle="#333"; ctx.fillText("Saída Constante: "+clean,50,50); return; 
+            }
+
+            // Split Terms (SOP)
+            let terms = []; let lvl = 0, buff = "";
+            for(let char of clean) { 
+                if(char==='(') lvl++; else if(char===')') lvl--; 
+                if(char==='+' && lvl===0){ if(buff) terms.push(buff); buff=""; } else buff+=char; 
+            }
+            if(buff) terms.push(buff);
+
+            // Calc Dynamic Dimensions
+            const railX = { 'A': 30, 'B': 50, 'C': 70, 'D': 90 };
+            const startGateX = 140;
+            const gateStepX = 60; // Horizontal step per cascade
+            const rowHeight = 70;
+            
+            // Find max cascade depth to size width
+            let maxDepth = 1;
+            terms.forEach(t => {
+                let lits = (t.match(/[A-D]/g) || []).length;
+                if(lits > 2) maxDepth = Math.max(maxDepth, lits - 1);
+            });
+            // Total OR cascade depth
+            let orDepth = terms.length > 1 ? terms.length - 1 : 0;
+            
+            const totalWidth = Math.max(380, startGateX + (maxDepth * gateStepX) + (orDepth * gateStepX) + 100);
+            const totalHeight = Math.max(350, (terms.length * rowHeight) + 100);
+            
+            ctx.canvas.width = totalWidth; 
+            ctx.canvas.height = totalHeight;
+            ctx.clearRect(0,0,totalWidth,totalHeight);
+            
+            // Draw Rails
+            ctx.lineWidth = 2; ctx.font = "bold 12px Arial";
+            ['A','B','C','D'].forEach(v => {
+                ctx.strokeStyle = '#94a3b8'; ctx.beginPath(); 
+                ctx.moveTo(railX[v], 20); ctx.lineTo(railX[v], totalHeight - 20); ctx.stroke();
+                ctx.fillStyle = '#2563eb'; ctx.fillText(v, railX[v]-4, 15);
+            });
+
+            const termOutputs = []; // {x, y} for final OR
+            let currentY = 50;
+
+            // Draw Terms (AND Cascades)
+            terms.forEach(term => {
+                let lits = [];
+                let gateType = 'AND'; // Default
+
+                if(term.includes('\u2295')) { 
+                    // XOR Detected
+                    gateType = 'XOR';
+                    const parts = term.split('\u2295');
+                    parts.forEach(p => {
+                        const m = p.match(/([A-D])('?)/);
+                        if(m) lits.push({c:m[1], n:m[2]==="'"});
+                    });
+                } else if(term.includes('\u2299')) {
+                    // XNOR Detected
+                    gateType = 'XNOR';
+                    const parts = term.split('\u2299');
+                    parts.forEach(p => {
+                        const m = p.match(/([A-D])('?)/);
+                        if(m) lits.push({c:m[1], n:m[2]==="'"});
+                    });
+                } else {
+                     const m = term.matchAll(/([A-D])('?)/g);
+                     for(const i of m) lits.push({c:i[1], n:i[2]==="'"});
+                }
+                
+                if(lits.length === 0) return;
+
+                // Process Cascading Gates
+                let curX = startGateX;
+
+                if (lits.length === 1 && !term.includes('\u2295') && !term.includes('\u2299')) {
+                    // Single literal (Wire)
+                    let lit = lits[0];
+                    drawWire(ctx, railX[lit.c], currentY, curX, currentY, lit.n); 
+                    termOutputs.push({x: curX, y: currentY});
+                } else {
+                    // Cascade Logic
+                    // First 2 inputs
+                    drawWire(ctx, railX[lits[0].c], currentY-10, curX, currentY-10, lits[0].n);
+                    drawWire(ctx, railX[lits[1].c], currentY+10, curX, currentY+10, lits[1].n);
+                    
+                    drawGateSimple(ctx, gateType, curX, currentY);
+                    curX += gateStepX; 
+                    
+                    // Subsequent inputs
+                    for(let i=2; i<lits.length; i++) {
+                        ctx.strokeStyle = '#475569'; ctx.beginPath();
+                        ctx.moveTo(curX - gateStepX + 20, currentY); 
+                        ctx.lineTo(curX, currentY - 10); 
+                        ctx.stroke();
+
+                        drawWire(ctx, railX[lits[i].c], currentY+20, curX, currentY+10, lits[i].n); 
+                        
+                        drawGateSimple(ctx, gateType, curX, currentY);
+                        curX += gateStepX;
+                    }
+                    termOutputs.push({x: curX - gateStepX + 20, y: currentY}); 
+                }
+                currentY += rowHeight;
+            });
+
+            // Draw Final OR Cascade
+            if (termOutputs.length === 1) {
+                let last = termOutputs[0];
+                ctx.strokeStyle = '#000'; ctx.beginPath();
+                ctx.moveTo(last.x, last.y); ctx.lineTo(last.x + 40, last.y); ctx.stroke();
+                ctx.fillStyle = '#000'; ctx.fillText("Y", last.x + 45, last.y + 4);
+            } else {
+                let curX = 0; 
+                termOutputs.forEach(t => curX = Math.max(curX, t.x));
+                curX += 40; 
+                
+                let prevOutPoint = {x: termOutputs[0].x, y: termOutputs[0].y};
+
+                for(let i=1; i<termOutputs.length; i++) {
+                    let nextTerm = termOutputs[i];
+                    let gateY = (i===1) ? (termOutputs[0].y + termOutputs[1].y)/2 : nextTerm.y;
+                    
+                    let currentOrX = curX; // Cascade ORs horizontally? Let's just stack them slightly right
+                    
+                    drawOrthogonalWire(ctx, prevOutPoint.x, prevOutPoint.y, currentOrX, gateY - 10);
+                    drawOrthogonalWire(ctx, nextTerm.x, nextTerm.y, currentOrX, gateY + 10);
+                    
+                    drawGateSimple(ctx, 'OR', currentOrX, gateY);
+                    prevOutPoint = {x: currentOrX + 20, y: gateY}; 
+                    curX += gateStepX; 
+                }
+                
+                ctx.strokeStyle = '#000'; ctx.beginPath();
+                ctx.moveTo(prevOutPoint.x, prevOutPoint.y); ctx.lineTo(prevOutPoint.x + 30, prevOutPoint.y); ctx.stroke();
+                ctx.fillStyle = '#000'; ctx.fillText("Y", prevOutPoint.x + 35, prevOutPoint.y + 5);
+            }
+        }
+
+        // Helper: Draw Orthogonal Wire (Manhattan)
+        function drawWire(ctx, x1, y1, x2, y2, inverted) {
+            // Draw connection dot on rail
+            ctx.fillStyle = '#2563eb'; ctx.beginPath(); ctx.arc(x1, y1, 3, 0, Math.PI*2); ctx.fill();
+            
+            // Draw Orthogonal Line
+            ctx.strokeStyle = '#475569'; ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            if (Math.abs(y1 - y2) < 2) {
+                ctx.lineTo(x2, y2); // Straight horizontal
+            } else {
+                // Horizontal then Vertical then Horizontal
+                let midX = x1 + (x2-x1)/2; // Simple midpoint step?
+                // Better for inputs: Go slightly horizontal from rail, then vertical to target Y, then horizontal to gate
+                // Since rail is far left, we can just go straight horizontal to x2-10? No, overlapping wires.
+                // Strategy: Immediate Horizontal, Vertical, Final Horizontal
+                ctx.lineTo(x2 - 15, y1); 
+                ctx.lineTo(x2 - 15, y2);
+                ctx.lineTo(x2, y2);
+            }
+            ctx.stroke();
+
+            // Inverter Bubble if needed
+            if (inverted) {
+                ctx.fillStyle = '#fff'; ctx.strokeStyle = '#000'; ctx.lineWidth = 1.5;
+                ctx.beginPath(); ctx.arc(x2 - 5, y2, 3, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+            }
+        }
+
+        // Helper: Draw Wire between two arb points orthogonally
+        function drawOrthogonalWire(ctx, x1, y1, x2, y2) {
+            ctx.strokeStyle = '#475569'; ctx.lineWidth = 2; ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            // Mid-point horizontal break
+            let midX = (x1 + x2) / 2;
+            ctx.lineTo(midX, y1);
+            ctx.lineTo(midX, y2);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+        }
+
+        function drawGateSimple(ctx, type, x, y) {
+            ctx.fillStyle = '#fff'; ctx.strokeStyle = '#000'; ctx.lineWidth = 2;
+            if (type === 'AND' || type === 'NAND') {
+                ctx.beginPath(); 
+                ctx.moveTo(x, y-15); ctx.lineTo(x+15, y-15); 
+                ctx.arc(x+15, y, 15, -Math.PI/2, Math.PI/2); 
+                ctx.lineTo(x, y+15); ctx.lineTo(x, y-15); 
+                ctx.fill(); ctx.stroke();
+                if(type === 'NAND') { ctx.beginPath(); ctx.arc(x+33, y, 3, 0, 2*Math.PI); ctx.fill(); ctx.stroke(); }
+            } else if (type === 'OR' || type === 'NOR') {
+                ctx.beginPath();
+                ctx.moveTo(x, y-15);
+                ctx.quadraticCurveTo(x+15, y-15, x+30, y); 
+                ctx.quadraticCurveTo(x+15, y+15, x, y+15); 
+                ctx.quadraticCurveTo(x+10, y, x, y-15);   
+                ctx.fill(); ctx.stroke();
+                if(type === 'NOR') { ctx.beginPath(); ctx.arc(x+33, y, 3, 0, 2*Math.PI); ctx.fill(); ctx.stroke(); }
+            } else if (type === 'XOR' || type === 'XNOR') {
+                ctx.beginPath(); ctx.moveTo(x-5, y-15); ctx.quadraticCurveTo(x+5, y, x-5, y+15); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(x, y-15); ctx.quadraticCurveTo(x+15, y-15, x+30, y); 
+                ctx.quadraticCurveTo(x+15, y+15, x, y+15); ctx.quadraticCurveTo(x+10, y, x, y-15);   
+                ctx.fill(); ctx.stroke();
+                if(type === 'XNOR') { ctx.beginPath(); ctx.arc(x+33, y, 3, 0, 2*Math.PI); ctx.fill(); ctx.stroke(); }
+            }
+        }
+
+        function drawChip() {
+            const ctx = document.getElementById('chip-canvas').getContext('2d');
+            ctx.canvas.width = 350; ctx.canvas.height = 300; ctx.clearRect(0,0,350,300);
+            
+            // Sombra
+            ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = 10; ctx.shadowOffsetX = 5; ctx.shadowOffsetY = 5;
+            
+            ctx.fillStyle="#222"; ctx.fillRect(25,50,300,200); 
+            ctx.shadowBlur = 0; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0; // Reset shadow
+
+            ctx.fillStyle="#111"; ctx.beginPath(); ctx.arc(25, 150, 15, -Math.PI/2, Math.PI/2); ctx.fill();
+            ctx.fillStyle="#ddd"; ctx.font="bold 24px Arial"; ctx.fillText(document.getElementById('chip-selector').value, 130, 155);
+            
+            const pinMap = getPinout(document.getElementById('chip-selector').value).map;
+            for(let i=0; i<7; i++) {
+                const x = 55 + (i*40); 
+                // Pins
+                ctx.fillStyle="#9ca3af"; 
+                ctx.fillRect(x, 250, 10, 30); // Bot
+                ctx.fillRect(x, 20, 10, 30);  // Top
+                
+                const pBot = pinMap.find(p=>p.pin===i+1);
+                const pTop = pinMap.find(p=>p.pin===14-i);
+                
+                ctx.font="bold 11px Arial";
+                if(pBot) { ctx.fillStyle=getColor(pBot.type); ctx.fillText(pBot.lbl, x-2, 245); }
+                if(pTop) { ctx.fillStyle=getColor(pTop.type); ctx.fillText(pTop.lbl, x-2, 65); }
+            }
+        }
+        function getColor(type) { return type==='VCC'?'#ef4444':type==='GND'?'#000':type==='OUT'?'#fbbf24':'#4ade80'; }
+        function getPinout(type) {
+            const vcc={pin:14,type:'VCC',lbl:'VCC'}, gnd={pin:7,type:'GND',lbl:'GND'};
+            if(type==='7402') { return { map: [ {pin:1,type:'OUT',lbl:'1Y'}, {pin:2,type:'IN',lbl:'1A'}, {pin:3,type:'IN',lbl:'1B'}, {pin:4,type:'OUT',lbl:'2Y'}, {pin:5,type:'IN',lbl:'2A'}, {pin:6,type:'IN',lbl:'2B'}, gnd, {pin:8,type:'IN',lbl:'3A'}, {pin:9,type:'IN',lbl:'3B'}, {pin:10,type:'OUT',lbl:'3Y'}, {pin:11,type:'IN',lbl:'4A'}, {pin:12,type:'IN',lbl:'4B'}, {pin:13,type:'OUT',lbl:'4Y'}, vcc ]}; }
+            if(type==='7404') { return { map: [ {pin:1,type:'IN',lbl:'1A'}, {pin:2,type:'OUT',lbl:'1Y'}, {pin:3,type:'IN',lbl:'2A'}, {pin:4,type:'OUT',lbl:'2Y'}, {pin:5,type:'IN',lbl:'3A'}, {pin:6,type:'OUT',lbl:'3Y'}, gnd, {pin:8,type:'OUT',lbl:'4Y'}, {pin:9,type:'IN',lbl:'4A'}, {pin:10,type:'OUT',lbl:'5Y'}, {pin:11,type:'IN',lbl:'5A'}, {pin:12,type:'OUT',lbl:'6Y'}, {pin:13,type:'IN',lbl:'6A'}, vcc ]}; }
+            return { map: [ {pin:1,type:'IN',lbl:'1A'}, {pin:2,type:'IN',lbl:'1B'}, {pin:3,type:'OUT',lbl:'1Y'}, {pin:4,type:'IN',lbl:'2A'}, {pin:5,type:'IN',lbl:'2B'}, {pin:6,type:'OUT',lbl:'2Y'}, gnd, {pin:8,type:'OUT',lbl:'3Y'}, {pin:9,type:'IN',lbl:'3A'}, {pin:10,type:'IN',lbl:'3B'}, {pin:11,type:'OUT',lbl:'4Y'}, {pin:12,type:'IN',lbl:'4A'}, {pin:13,type:'IN',lbl:'4B'}, vcc ]};
+        }
+
+        // --- EXPORT FUNCTIONS (MODAL SYSTEM FOR WEBVIEW) ---
+        function exportCircuitImage() {
+            const canvas = document.getElementById('circuit-canvas');
+            const dataUrl = canvas.toDataURL("image/png");
+            showImageModal(dataUrl);
+        }
+
+        function exportTableImage() {
+            const table = document.getElementById("truth-table-display");
+            if (!table.rows.length) return;
+
+            const rowHeight = 40;
+            const colWidth = 60;
+            const padding = 20;
+            const width = (table.rows[0].cells.length * colWidth) + (padding * 2);
+            const height = (table.rows.length * rowHeight) + (padding * 2);
+
+            const canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+
+            // Background Escuro
+            ctx.fillStyle = "#020617";
+            ctx.fillRect(0, 0, width, height);
+
+            ctx.font = "bold 16px Courier New";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.lineWidth = 1;
+
+            for (let i = 0; i < table.rows.length; i++) {
+                const row = table.rows[i];
+                const y = padding + (i * rowHeight) + (rowHeight / 2);
+                
+                // Linhas
+                ctx.beginPath();
+                ctx.moveTo(padding, padding + (i * rowHeight));
+                ctx.lineTo(width - padding, padding + (i * rowHeight));
+                ctx.strokeStyle = (i === 0 || i === 1) ? "#3b82f6" : "#1e293b";
+                ctx.stroke();
+
+                for (let j = 0; j < row.cells.length; j++) {
+                    const cell = row.cells[j];
+                    const x = padding + (j * colWidth) + (colWidth / 2);
+                    
+                    let color = "#94a3b8";
+                    if (i === 0) color = "#f59e0b"; // Header
+                    else {
+                        if (cell.classList.contains("result-1")) color = "#00ff9d";
+                        else if (cell.classList.contains("result-0")) color = "#ff3366";
+                    }
+                    
+                    ctx.fillStyle = color;
+                    ctx.fillText(cell.innerText, x, y);
+                }
+            }
+            // Borda Final
+            ctx.strokeStyle = "#334155";
+            ctx.strokeRect(padding, padding, width - (padding*2), height - (padding*2));
+
+            const dataUrl = canvas.toDataURL("image/png");
+            showImageModal(dataUrl);
+        }
+
+        updateGateLogic(); generateTruthTable(); initKMapGrid();
+    </script>
+</body>
+</html>
