@@ -52,6 +52,14 @@ jobs:
             --output app/www/index.html \
             index.html
           
+          # --- REMOÇÃO DO SPLASH SCREEN PADRÃO DO CORDOVA ---
+          # Injetamos preferências no config.xml para desativar a tela de carregamento nativa.
+          # Isso garante que o usuário veja a SUA animação KMZ imediatamente.
+          echo "Desativando Splash Screen padrão do Cordova..."
+          sed -i '/<\/widget>/i \    <preference name="ShowSplashScreen" value="false" />' app/config.xml
+          sed -i '/<\/widget>/i \    <preference name="SplashScreenDelay" value="0" />' app/config.xml
+          sed -i '/<\/widget>/i \    <preference name="FadeSplashScreen" value="false" />' app/config.xml
+
           # Lógica para adicionar o Ícone (se o arquivo icon.png existir no repo)
           if [ -f "icon.png" ]; then
             echo "Ícone personalizado encontrado! Configurando..."
