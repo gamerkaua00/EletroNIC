@@ -30,7 +30,7 @@ jobs:
       - name: Install Cordova
         run: npm install -g cordova
 
-      # --- DETECTOR DE VERSÃO (Mantido) ---
+      # --- DETECTOR DE VERSÃO ---
       - name: Detect Android Build Tools
         id: android_tools
         run: |
@@ -77,20 +77,20 @@ jobs:
           cd app
           cordova build android --release -- --packageType=apk
 
-      # --- ASSINATURA (MODERNIZADA) ---
-      # Trocamos para 'ilharp/sign-android-release@v1' que aceita o buildToolsVersion
+      # --- ASSINATURA CORRIGIDA ---
+      # Nomes dos parâmetros atualizados para a ação ilharp
       - name: Sign APK
         id: sign_app
         uses: ilharp/sign-android-release@v1
         with:
-          releaseDirectory: app/platforms/android/app/build/outputs/apk/release
-          signingKeyBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          alias: ${{ secrets.ANDROID_KEY_ALIAS }}
+          releaseDir: app/platforms/android/app/build/outputs/apk/release
+          signingKey: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          keyAlias: ${{ secrets.ANDROID_KEY_ALIAS }}
           keyStorePassword: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           keyPassword: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           buildToolsVersion: ${{ steps.android_tools.outputs.version }}
         
-      # Upload do APK (Caminho atualizado para signedFile)
+      # Upload do APK
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
