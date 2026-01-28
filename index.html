@@ -213,6 +213,15 @@
             letter-spacing: 1px;
             font-weight: bold;
         }
+        /* Correção para o Input ser ReadOnly visualmente agradável */
+        input[readonly] {
+            cursor: pointer;
+            background-color: var(--bg); /* Mantém cor normal */
+            border-color: var(--border);
+        }
+        input[readonly]:focus {
+            border-color: var(--primary); /* Feedback visual de foco mesmo sem teclado */
+        }
 
         /* --- BOTÕES --- */
         .btn {
@@ -673,7 +682,8 @@
 
                 <div id="mode-custom-controls" class="hidden">
                     <div style="display:flex; gap:8px;">
-                        <input type="text" id="custom-expression" placeholder="Use o teclado abaixo..." readonly onclick="this.removeAttribute('readonly')" style="margin:0;">
+                        <!-- FIX DO TECLADO: Readonly permanente para não abrir teclado nativo -->
+                        <input type="text" id="custom-expression" placeholder="Use o teclado abaixo..." readonly style="margin:0;">
                         <button class="btn btn-danger" style="width:auto; margin:0; padding:0 15px;" onclick="document.getElementById('custom-expression').value=''">Limpar</button>
                     </div>
                     
@@ -968,6 +978,22 @@
             document.getElementById('export-modal').classList.remove('visible');
         }
 
+        // --- CANVAS HIGH DPI HELPER (CORREÇÃO DE BORRADO EM TELAS HD) ---
+        function setupCanvas(canvas) {
+            const dpr = window.devicePixelRatio || 1;
+            // Get the size the browser is displaying the canvas
+            const rect = canvas.getBoundingClientRect();
+            
+            // Give the canvas pixel dimensions of their CSS size * the device pixel ratio.
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            
+            const ctx = canvas.getContext('2d');
+            // Scale all drawing operations by the dpr, so you don't have to worry about the difference.
+            ctx.scale(dpr, dpr);
+            return ctx;
+        }
+
         // --- SIMULATOR LOGIC ---
         function updateGateLogic() {
             const gate = document.getElementById('gate-selector').value;
@@ -1035,7 +1061,7 @@
         }
         function clearConv() { ['in-dec','in-bin','in-oct','in-hex'].forEach(id=>document.getElementById(id).value=""); }
 
-        // --- TRUTH TABLE & PARSING LOGIC ---
+        // --- TRUTH TABLE & SAFE PARSING LOGIC (CORREÇÃO DE SEGURANÇA) ---
         function parseExpression(expr, ctx) {
             try {
                 let clean = expr.toUpperCase().replace(/\s+/g, ''); if(!clean) return null;
@@ -1043,18 +1069,56 @@
                 if(clean === '0') return false;
                 if(clean === '1') return true;
 
-                clean = clean.replace(/([A-D])\'/g, '!$1');
-                
+                // CORREÇÃO CRÍTICA DO APÓSTROFO (NOT PÓS-FIXADO):
+                // Transforma (A+B)' em !(A+B) varrendo a string de trás pra frente
+                // Isso resolve o problema de negação de grupos.
+                while (clean.includes("'")) {
+                    const idx = clean.indexOf("'");
+                    if (idx > 0) {
+                        let start = idx - 1;
+                        if (clean[start] === ')') {
+                            // Grupo: encontrar o parêntese de abertura correspondente
+                            let depth = 1;
+                            start--;
+                            while (start >= 0 && depth > 0) {
+                                if (clean[start] === ')') depth++;
+                                else if (clean[start] === '(') depth--;
+                                start--;
+                            }
+                            start++; // Voltar um passo pois o loop decrementou demais
+                        } else {
+                            // Variável simples ou constante (ex: A' ou 1')
+                            // Apenas pega o caractere anterior
+                        }
+                        // Reconstrói a string: Antes + !(Alvo) + Depois
+                        clean = clean.substring(0, start) + '!(' + clean.substring(start, idx) + ')' + clean.substring(idx + 1);
+                    } else {
+                        // Apóstrofo no começo (inválido), apenas remove
+                        clean = clean.replace("'", "");
+                    }
+                }
+
                 const atom = "!?(?:[A-D]|[0-1]|\\([^)]+\\))";
                 while(clean.includes('\u22BC')) clean = clean.replace(new RegExp(`(${atom})\u22BC(${atom})`), '!($1&&$2)');
                 while(clean.includes('\u22BD')) clean = clean.replace(new RegExp(`(${atom})\u22BD(${atom})`), '!($1||$2)');
                 
-                clean = clean.replace(/([A-D\)])(?=[A-D\(!])/g, '$1&&'); 
+                // Normalização de operadores
+                clean = clean.replace(/([A-D\)])(?=[A-D\(!])/g, '$1&&'); // AND implícito
                 clean = clean.replace(/\u2295/g, '!==').replace(/\u2299/g, '===');
-                clean = clean.replace(/\+/g, '||').replace(/\*/g, '&&').replace(/\^/g, '!==');
+                clean = clean.replace(/\+/g, '||').replace(/\*/g, '&&');
                 
+                // Substituição de variáveis
                 for(let v of ['A','B','C','D']) clean = clean.split(v).join(ctx[v] ? 'true' : 'false');
-                if(/[^truefalse!&|()=!=>]/.test(clean)) return null;
+
+                // --- SEGURANÇA MÁXIMA (WHITELIST) ---
+                // Verifica se a string final contém APENAS caracteres permitidos em lógica booleana
+                // Se tiver qualquer outra coisa (ex: 'window', 'alert', 'fetch'), retorna null.
+                if(/[^truefalse!&|()=!=>\s]/.test(clean)) {
+                    console.error("Tentativa de injeção bloqueada:", clean);
+                    return null;
+                }
+
+                // Execução Sandboxed
                 return Function('"use strict";return (' + clean + ')')();
             } catch(e) { return null; }
         }
@@ -1149,11 +1213,10 @@
             
             const xorPattern = checkSemanticXor(minterms, currentVars);
             if(xorPattern) { 
-                // CORREÇÃO: Torna o XOR clicável para iluminar todos os mintermos correspondentes
                 const ms = JSON.stringify(minterms);
                 eqBox.innerHTML = `Y = <span class="interactive-term" onclick="highlightGroup(${ms})">${xorPattern}</span>`;
                 lastCalculatedEquation = xorPattern; 
-                solutionGroups=[minterms]; // Salva para uso lógico se necessário
+                solutionGroups=[minterms]; 
                 return; 
             }
             
@@ -1164,7 +1227,7 @@
 
             let terms = solution.map(g => formatTerm(g, currentVars));
             let finalTerms = safeXorDetection(terms);
-            lastCalculatedEquation = finalTerms; // Store safe string
+            lastCalculatedEquation = finalTerms; 
 
             let html = "Y = ";
             solution.forEach((group, idx) => {
@@ -1220,12 +1283,10 @@
             } return primes;
         }
         
-        // CORREÇÃO CRÍTICA DO ALGORITMO: Priorização de agrupamentos que "dão a volta"
+        // Priorização de agrupamentos que "dão a volta"
         function selectMinimalCover(primes, req) {
-             // Ordena por tamanho (decrescente), depois por "envolvimento" (isWrap)
             primes.sort((a,b) => {
                 if (b.size !== a.size) return b.size - a.size;
-                // Se tamanho igual, prefere o que dá a volta nas bordas (estética melhor e evita separar cantos)
                 const aWrap = isGroupWrapping(a.minterms);
                 const bWrap = isGroupWrapping(b.minterms);
                 return (bWrap ? 1 : 0) - (aWrap ? 1 : 0);
@@ -1235,14 +1296,12 @@
             while(todo.size > 0) {
                 let best=null, bestSize=-1, bestCount=-1;
                 for(let p of primes) {
-                    // if(sel.includes(p)) continue; // não precisa pois removemos do todo
                     let count=0; for(let m of p.minterms) if(todo.has(m)) count++;
                     if (count > 0) {
-                         // Strict priority: Size > Count > Wrap
                         if (p.size > bestSize) { best = p; bestSize = p.size; bestCount = count; } 
                         else if (p.size === bestSize) { 
                              if (count > bestCount) { best = p; bestCount = count; }
-                             else if (count === bestCount && isGroupWrapping(p.minterms)) { best = p; } // Desempate pelo wrap
+                             else if (count === bestCount && isGroupWrapping(p.minterms)) { best = p; } 
                         }
                     }
                 }
@@ -1254,7 +1313,6 @@
             if(minterms.length < 2) return false;
             let min = Math.min(...minterms);
             let max = Math.max(...minterms);
-            // Heurística simples: se a distância entre índices for grande, provavelmente deu a volta no grid
             return (max - min) > (minterms.length * 1.5); 
         }
 
@@ -1353,12 +1411,17 @@
         
         function drawCircuit(expr) {
             const canvas = document.getElementById('circuit-canvas');
-            const ctx = canvas.getContext('2d');
+            // USE O NOVO SETUP CANVAS AQUI
+            // Reseta estilo para garantir recalculo correto
+            canvas.style.width = '100%'; 
+            canvas.style.height = '100%';
             
             // Clean & Parse
             let clean = expr.replace(/\s/g, '');
             if(clean==='0'||clean==='1') { 
-                ctx.canvas.width=350; ctx.canvas.height=200; ctx.clearRect(0,0,350,200);
+                const ctx = setupCanvas(canvas); // Setup com HiDPI
+                // Limpeza e desenho
+                ctx.clearRect(0,0,canvas.width,canvas.height);
                 ctx.font="bold 20px Arial"; ctx.fillStyle="#333"; ctx.fillText("Saída Constante: "+clean,50,50); return; 
             }
 
@@ -1388,9 +1451,12 @@
             const totalWidth = Math.max(380, startGateX + (maxDepth * gateStepX) + (orDepth * gateStepX) + 100);
             const totalHeight = Math.max(350, (terms.length * rowHeight) + 100);
             
-            ctx.canvas.width = totalWidth; 
-            ctx.canvas.height = totalHeight;
-            ctx.clearRect(0,0,totalWidth,totalHeight);
+            // Define o tamanho visual (CSS)
+            canvas.style.width = totalWidth + 'px';
+            canvas.style.height = totalHeight + 'px';
+            
+            // Usa o setup para ajustar a densidade de pixels
+            const ctx = setupCanvas(canvas);
             
             // Draw Rails
             ctx.lineWidth = 2; ctx.font = "bold 12px Arial";
@@ -1567,8 +1633,11 @@
         }
 
         function drawChip() {
-            const ctx = document.getElementById('chip-canvas').getContext('2d');
-            ctx.canvas.width = 350; ctx.canvas.height = 300; ctx.clearRect(0,0,350,300);
+            const canvas = document.getElementById('chip-canvas');
+            // USE O NOVO SETUP CANVAS AQUI TAMBÉM
+            canvas.style.width = '350px';
+            canvas.style.height = '300px';
+            const ctx = setupCanvas(canvas);
             
             // Sombra
             ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = 10; ctx.shadowOffsetX = 5; ctx.shadowOffsetY = 5;
@@ -1621,9 +1690,13 @@
             const height = (table.rows.length * rowHeight) + (padding * 2);
 
             const canvas = document.createElement("canvas");
-            canvas.width = width;
-            canvas.height = height;
+            // Set dimensions for High DPI output
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = width * dpr;
+            canvas.height = height * dpr;
+            
             const ctx = canvas.getContext("2d");
+            ctx.scale(dpr, dpr);
 
             // Background Escuro
             ctx.fillStyle = "#020617";
