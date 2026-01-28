@@ -13,10 +13,12 @@ jobs:
       - name: Checkout Source Code
         uses: actions/checkout@v3
 
+      # Cache do Node.js para acelerar o processo (não baixa tudo de novo toda vez)
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
+          cache: 'npm'
 
       - name: Setup Java
         uses: actions/setup-java@v3
@@ -24,7 +26,6 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      # Instalamos a ferramenta que fará a "segurança" (ofuscação leve e compressão)
       - name: Install Minification Tools
         run: npm install -g html-minifier-terser
 
@@ -41,8 +42,7 @@ jobs:
         run: |
           rm app/www/index.html
           
-          # Passo de Segurança: Minificar e Ofuscar o código HTML/JS antes de empacotar
-          # Isso remove seus comentários e encurta variáveis para dificultar a leitura do código
+          # Passo de Segurança: Minificar e Ofuscar o código
           echo "Aplicando proteção de código..."
           html-minifier-terser \
             --collapse-whitespace \
@@ -52,9 +52,7 @@ jobs:
             --output app/www/index.html \
             index.html
           
-          # --- CONFIGURAÇÃO AVANÇADA DE SPLASH SCREEN (Tchau Robô do Cordova!) ---
-          # 1. Definimos a cor de fundo nativa para a mesma cor do seu app (#0f172a)
-          # 2. Desativamos o delay e o fade para ser instantâneo
+          # Configuração Visual (Splash Screen e Cores)
           echo "Configurando preferências visuais..."
           sed -i '/<\/widget>/i \    <preference name="ShowSplashScreen" value="false" />' app/config.xml
           sed -i '/<\/widget>/i \    <preference name="SplashScreenDelay" value="0" />' app/config.xml
@@ -62,28 +60,35 @@ jobs:
           sed -i '/<\/widget>/i \    <preference name="BackgroundColor" value="0xff0f172a" />' app/config.xml
           sed -i '/<\/widget>/i \    <preference name="AndroidWindowSplashScreenBackground" value="#0f172a" />' app/config.xml
 
-          # Lógica para adicionar o Ícone e Splash Personalizado
+          # Lógica do Ícone Personalizado
           if [ -f "icon.png" ]; then
-            echo "Ícone personalizado encontrado! Configurando Ícone e Splash..."
+            echo "Ícone personalizado encontrado! Configurando..."
             cp icon.png app/www/icon.png
-            
-            # TRUQUE DE MESTRE:
-            # Usamos o 'icon.png' também como 'splash'. Isso garante que o Android 12+ 
-            # use o seu logo na abertura nativa em vez do ícone padrão do Cordova.
             sed -i '/<\/widget>/i \    <icon src="www/icon.png" />' app/config.xml
             sed -i '/<\/widget>/i \    <splash src="www/icon.png" />' app/config.xml
             sed -i '/<\/widget>/i \    <preference name="AndroidWindowSplashScreenAnimatedIcon" value="www/icon.png" />' app/config.xml
-          else
-            echo "Aviso: icon.png não encontrado. O app será gerado com o ícone padrão."
           fi
 
-      - name: Build APK (Debug Version)
+      # MUDANÇA: Gera o APK em modo RELEASE (pronto para assinar)
+      - name: Build APK (Release Version)
         run: |
           cd app
-          cordova build android --debug -- --packageType=apk
-          
+          cordova build android --release -- --packageType=apk
+
+      # NOVO PASSO: Assinar o APK usando seus Segredos do GitHub
+      - name: Sign APK
+        id: sign_app
+        uses: r0adkll/sign-android-release@v1
+        with:
+          releaseDirectory: app/platforms/android/app/build/outputs/apk/release
+          signingKeyBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          alias: ${{ secrets.ANDROID_KEY_ALIAS }}
+          keyStorePassword: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          keyPassword: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        
+      # Upload do APK final já assinado (Baixe esse arquivo no final!)
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: EletroNIC-KMZ-2026-Debug
-          path: app/platforms/android/app/build/outputs/apk/debug/app-debug.apk
+          name: EletroNIC-KMZ-2026-Release
+          path: ${{ steps.sign_app.outputs.signedReleaseFile }}
