@@ -13,12 +13,11 @@ jobs:
       - name: Checkout Source Code
         uses: actions/checkout@v3
 
-      # Cache do Node.js para acelerar o processo (não baixa tudo de novo toda vez)
+      # CORREÇÃO: Removi o "cache: npm" para não dar erro de falta de arquivo
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
-          cache: 'npm'
 
       - name: Setup Java
         uses: actions/setup-java@v3
@@ -42,7 +41,7 @@ jobs:
         run: |
           rm app/www/index.html
           
-          # Passo de Segurança: Minificar e Ofuscar o código
+          # Mantivemos sua proteção original intacta:
           echo "Aplicando proteção de código..."
           html-minifier-terser \
             --collapse-whitespace \
@@ -52,7 +51,7 @@ jobs:
             --output app/www/index.html \
             index.html
           
-          # Configuração Visual (Splash Screen e Cores)
+          # Mantivemos sua configuração visual intacta:
           echo "Configurando preferências visuais..."
           sed -i '/<\/widget>/i \    <preference name="ShowSplashScreen" value="false" />' app/config.xml
           sed -i '/<\/widget>/i \    <preference name="SplashScreenDelay" value="0" />' app/config.xml
@@ -60,7 +59,6 @@ jobs:
           sed -i '/<\/widget>/i \    <preference name="BackgroundColor" value="0xff0f172a" />' app/config.xml
           sed -i '/<\/widget>/i \    <preference name="AndroidWindowSplashScreenBackground" value="#0f172a" />' app/config.xml
 
-          # Lógica do Ícone Personalizado
           if [ -f "icon.png" ]; then
             echo "Ícone personalizado encontrado! Configurando..."
             cp icon.png app/www/icon.png
@@ -75,7 +73,7 @@ jobs:
           cd app
           cordova build android --release -- --packageType=apk
 
-      # NOVO PASSO: Assinar o APK usando seus Segredos do GitHub
+      # Passo de Assinatura usando seus Secrets
       - name: Sign APK
         id: sign_app
         uses: r0adkll/sign-android-release@v1
@@ -86,7 +84,7 @@ jobs:
           keyStorePassword: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           keyPassword: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
         
-      # Upload do APK final já assinado (Baixe esse arquivo no final!)
+      # Upload do APK final ASSINADO
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
