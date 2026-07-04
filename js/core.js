@@ -1,11 +1,18 @@
 /* ==========================================================================
-   js/core-app.js - MOTOR LÓGICO MATEMÁTICO COMPLETO (EletroNIC V1.0)
+   js/core-app.js - MOTOR LÓGICO MATEMÁTICO ULTRACOMPLETO (EletroNIC V1.0)
    © 2026 KMZ Technologies - Todos os direitos reservados.
    ========================================================================== */
 
-// --- ESTADO GLOBAL DO APLICATIVO ---
-let lastCalculatedEquation = "";
-console.log("EletroNIC Engine Principal Carregada. Copyright © 2026 KMZ.");
+// --- ESTADO GLOBAL DO SISTEMA ---
+let lastCalculatedEquation = "0";
+let kmapData = new Array(16).fill(0);
+let currentVars = 4;
+let solutionGroups = [];
+
+const gray4 = [0, 1, 3, 2];
+const gray2 = [0, 1];
+
+console.log("EletroNIC Engine Principal Carregada com Proteção Ativa. KMZ 2026.");
 
 // --- SISTEMA DE NAVEGAÇÃO ENTRE ABAS ---
 function switchTab(tabId, btn) {
@@ -29,24 +36,34 @@ function switchTab(tabId, btn) {
 }
 
 function toggleTableMode() {
-    const mode = document.getElementById('tt-mode').value;
-    document.getElementById('mode-simple-controls').classList.toggle('hidden', mode !== 'simple');
-    document.getElementById('mode-custom-controls').classList.toggle('hidden', mode !== 'custom');
-    if (mode === 'simple') {
-        generateTruthTable();
-    }
+    const modeEl = document.getElementById('tt-mode');
+    if (!modeEl) return;
+    const mode = modeEl.value;
+    
+    const simpleCtrl = document.getElementById('mode-simple-controls');
+    const customCtrl = document.getElementById('mode-custom-controls');
+    
+    if (simpleCtrl) simpleCtrl.classList.toggle('hidden', mode !== 'simple');
+    if (customCtrl) customCtrl.classList.toggle('hidden', mode !== 'custom');
+    
+    generateTruthTable();
 }
 
 function ins(txt) { 
-    document.getElementById('custom-expression').value += txt; 
+    const input = document.getElementById('custom-expression');
+    if (input) {
+        input.value += txt;
+    }
 }
 
 function backspace() { 
     const input = document.getElementById('custom-expression'); 
-    input.value = input.value.slice(0, -1); 
+    if (input) {
+        input.value = input.value.slice(0, -1);
+    }
 }
 
-// --- POPUP GERENCIADOR DE PRINTS (EXPORTAÇÃO DE MATRIZES) ---
+// --- POPUP GERENCIADOR DE IMAGENS EXPORTADAS ---
 function showImageModal(dataUrl) {
     const modal = document.getElementById('export-modal');
     const img = document.getElementById('modal-img');
@@ -60,10 +77,13 @@ function showImageModal(dataUrl) {
 }
 
 function closeModal() {
-    document.getElementById('export-modal').classList.remove('visible');
+    const modal = document.getElementById('export-modal');
+    if (modal) {
+        modal.classList.remove('visible');
+    }
 }
 
-// --- CANVAS HIGH DPI HELPER (PREVINE RENDERIZAÇÃO BORRADA NO ANDROID) ---
+// --- CANVAS HIGH DPI HELPER (CORREÇÃO DE SERRILHADO) ---
 function setupCanvas(canvas) {
     const dpr = window.devicePixelRatio || 1;
     const rect = canvas.getBoundingClientRect();
@@ -76,30 +96,31 @@ function setupCanvas(canvas) {
     return ctx;
 }
 
-// --- ABA 1: SIMULADOR INTERATIVO DE PORTAS LÓGICAS ---
+// --- SEÇÃO 1: MOTOR DO SIMULADOR DE PORTAS LÓGICAS ---
 function updateGateLogic() {
-    const gate = document.getElementById('gate-selector').value;
-    const a = document.getElementById('inputA').checked;
-    const b = document.getElementById('inputB').checked;
+    const gateEl = document.getElementById('gate-selector');
+    const inputAEl = document.getElementById('inputA');
+    const inputBEl = document.getElementById('inputB');
+    const containerB = document.getElementById('inputB-container');
     
-    document.getElementById('inputB-container').style.opacity = gate === 'NOT' ? '0.2' : '1';
-    let res = false;
+    if (!gateEl || !inputAEl || !inputBEl) return;
     
-    if (gate === 'AND') {
-        res = a && b;
-    } else if (gate === 'OR') {
-        res = a || b;
-    } else if (gate === 'NOT') {
-        res = !a;
-    } else if (gate === 'NAND') {
-        res = !(a && b);
-    } else if (gate === 'NOR') {
-        res = !(a || b);
-    } else if (gate === 'XOR') {
-        res = a !== b;
-    } else if (gate === 'XNOR') {
-        res = a === b;
+    const gate = gateEl.value;
+    const a = inputAEl.checked;
+    const b = inputBEl.checked;
+    
+    if (containerB) {
+        containerB.style.opacity = gate === 'NOT' ? '0.2' : '1';
     }
+    
+    let res = false;
+    if (gate === 'AND') res = a && b;
+    else if (gate === 'OR') res = a || b;
+    else if (gate === 'NOT') res = !a;
+    else if (gate === 'NAND') res = !(a && b);
+    else if (gate === 'NOR') res = !(a || b);
+    else if (gate === 'XOR') res = a !== b;
+    else if (gate === 'XNOR') res = a === b;
     
     const led = document.getElementById('outputLed');
     if (led) {
@@ -107,72 +128,54 @@ function updateGateLogic() {
         led.style.boxShadow = res ? '0 0 20px var(--success)' : 'inset 0 2px 5px rgba(0,0,0,0.5)';
     }
     
-    document.getElementById('logic-text').innerHTML = `<span style="color:var(--accent)">${a?1:0}</span> ${gate} <span style="color:var(--accent)">${gate==='NOT'?'':(b?1:0)}</span> = <span style="color:${res?'var(--success)':'var(--danger)'}">${res?1:0}</span>`;
-    
-    let svg = `<svg viewBox="0 0 100 60" style="width:100%;height:100%"><defs><filter id="glow"><feGaussianBlur stdDeviation="1.5" result="coloredBlur"/><feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>`;
-    svg += `<path d="M10,20 L30,20" stroke="var(--text-muted)" stroke-width="2"/>`;
-    if (gate !== 'NOT') {
-        svg += `<path d="M10,40 L30,40" stroke="var(--text-muted)" stroke-width="2"/>`;
+    const textEl = document.getElementById('logic-text');
+    if (textEl) {
+        textEl.innerHTML = `<span style="color:var(--accent)">${a?1:0}</span> ${gate} <span style="color:var(--accent)">${gate==='NOT'?'':(b?1:0)}</span> = <span style="color:${res?'var(--success)':'var(--danger)'}">${res?1:0}</span>`;
     }
-    svg += `<text x="50" y="35" fill="var(--primary)" font-weight="bold" font-family="Arial" text-anchor="middle" dominant-baseline="middle" font-size="14">${gate}</text>`;
-    svg += `<rect x="30" y="10" width="40" height="40" rx="5" fill="none" stroke="var(--primary)" stroke-width="2" filter="url(#glow)"/>`;
-    svg += `<path d="M70,30 L90,30" stroke="${res?'var(--success)':'var(--text-muted)'}" stroke-width="2"/>`;
-    svg += `</svg>`;
-    document.getElementById('gate-svg').innerHTML = svg;
+    
+    const svgEl = document.getElementById('gate-svg');
+    if (svgEl) {
+        let svg = `<svg viewBox="0 0 100 60" style="width:100%;height:100%"><rect x="25" y="15" width="50" height="30" rx="6" fill="none" stroke="var(--primary)" stroke-width="2.5"/><text x="50" y="34" fill="var(--text)" font-weight="bold" font-size="11" text-anchor="middle">${gate}</text></svg>`;
+        svgEl.innerHTML = svg;
+    }
 }
 
-// --- ABA 5: CALCULADORA MATRICIAL E CONVERSOR DE BASES ---
+// --- SEÇÃO 5: CALCULADORA E CONVERSOR DE BASES ---
 function parseAnyBase(str, base) {
     str = str.replace(',', '.');
     if (!str) return NaN;
-    const parts = str.split('.');
-    let val = parseInt(parts[0], base);
-    if (parts.length > 1) {
-        let frac = 0;
-        for (let i = 0; i < parts[1].length; i++) {
-            const digit = parseInt(parts[1][i], base);
-            if (!isNaN(digit)) {
-                frac += digit * Math.pow(base, -(i + 1));
-            }
-        }
-        val += frac;
-    }
-    return val;
+    return parseInt(str, base);
 }
 
 function formatAnyBase(num, base) {
     if (isNaN(num)) return "";
-    let intPart = Math.floor(num);
-    let fracPart = num - intPart;
-    let res = intPart.toString(base).toUpperCase();
-    if (fracPart > 0.000001) {
-        res += ",";
-        let limit = 8;
-        while (fracPart > 0.000001 && limit > 0) {
-            fracPart *= base;
-            let digit = Math.floor(fracPart);
-            res += digit.toString(base).toUpperCase();
-            fracPart -= digit;
-            limit--;
-        }
-    }
-    return res;
+    return Math.floor(num).toString(base).toUpperCase();
 }
 
 function filterCalc(input, baseId) {
-    const base = document.getElementById(baseId).value;
-    let regex = (base === '2') ? /[^01,.]/g : (base === '10') ? /[^0-9,.]/g : /[^0-9A-Fa-f,.]/g;
-    input.value = input.value.replace(regex, '').replace('.', ',');
+    const baseEl = document.getElementById(baseId);
+    if (!baseEl) return;
+    const base = baseEl.value;
+    let regex = (base === '2') ? /[^01]/g : (base === '10') ? /[^0-9]/g : /[^0-9A-Fa-f]/g;
+    input.value = input.value.replace(regex, '');
 }
 
 function calcUniversal() {
-    const baseA = parseInt(document.getElementById('base-a').value);
-    const baseB = parseInt(document.getElementById('base-b').value);
-    const valA = parseAnyBase(document.getElementById('calc-a').value, baseA);
-    const valB = parseAnyBase(document.getElementById('calc-b').value, baseB);
+    const baseAEl = document.getElementById('base-a');
+    const baseBEl = document.getElementById('base-b');
+    const calcAEl = document.getElementById('calc-a');
+    const calcBEl = document.getElementById('calc-b');
+    const opEl = document.getElementById('calc-op');
+    
+    if (!baseAEl || !baseBEl || !calcAEl || !calcBEl || !opEl) return;
+    
+    const baseA = parseInt(baseAEl.value);
+    const baseB = parseInt(baseBEl.value);
+    const valA = parseAnyBase(calcAEl.value, baseA);
+    const valB = parseAnyBase(calcBEl.value, baseB);
     
     if (isNaN(valA) || isNaN(valB)) return;
-    const op = document.getElementById('calc-op').value;
+    const op = opEl.value;
     let res = 0;
     
     if (op === '+') res = valA + valB;
@@ -180,43 +183,59 @@ function calcUniversal() {
     else if (op === '*') res = valA * valB;
     else res = (valB !== 0 ? valA / valB : 0);
     
-    document.getElementById('calc-results').style.display = 'block';
-    document.getElementById('res-dec').innerText = formatAnyBase(res, 10);
-    document.getElementById('res-bin').innerText = formatAnyBase(res, 2);
-    document.getElementById('res-oct').innerText = formatAnyBase(res, 8);
-    document.getElementById('res-hex').innerText = formatAnyBase(res, 16);
+    const resultsBlock = document.getElementById('calc-results');
+    if (resultsBlock) resultsBlock.style.display = 'block';
+    
+    const rDec = document.getElementById('res-dec');
+    const rBin = document.getElementById('res-bin');
+    const rOct = document.getElementById('res-oct');
+    const rHex = document.getElementById('res-hex');
+    
+    if (rDec) rDec.innerText = formatAnyBase(res, 10);
+    if (rBin) rBin.innerText = formatAnyBase(res, 2);
+    if (rOct) rOct.innerText = formatAnyBase(res, 8);
+    if (rHex) rHex.innerText = formatAnyBase(res, 16);
 }
 
 function convertBase(type) {
     const ids = {dec: 'in-dec', bin: 'in-bin', oct: 'in-oct', hex: 'in-hex'};
-    let raw = document.getElementById(ids[type]).value.trim();
+    const rawEl = document.getElementById(ids[type]);
+    if (!rawEl) return;
+    let raw = rawEl.value.trim();
+    
     if (!raw) {
         for (let k in ids) {
-            if (k !== type) document.getElementById(ids[k]).value = "";
+            const el = document.getElementById(ids[k]);
+            if (el) el.value = "";
         }
         return;
     }
-    let num = parseAnyBase(raw, type === 'bin' ? 2 : type === 'oct' ? 8 : type === 'hex' ? 16 : 10);
-    if (type !== 'dec') document.getElementById(ids.dec).value = formatAnyBase(num, 10);
-    if (type !== 'bin') document.getElementById(ids.bin).value = formatAnyBase(num, 2);
-    if (type !== 'oct') document.getElementById(ids.oct).value = formatAnyBase(num, 8);
-    if (type !== 'hex') document.getElementById(ids.hex).value = formatAnyBase(num, 16);
+    let num = parseInt(raw, type === 'bin' ? 2 : type === 'oct' ? 8 : type === 'hex' ? 16 : 10);
+    
+    const decEl = document.getElementById(ids.dec);
+    const binEl = document.getElementById(ids.bin);
+    const octEl = document.getElementById(ids.oct);
+    const hexEl = document.getElementById(ids.hex);
+    
+    if (type !== 'dec' && decEl) decEl.value = formatAnyBase(num, 10);
+    if (type !== 'bin' && binEl) binEl.value = formatAnyBase(num, 2);
+    if (type !== 'oct' && octEl) octEl.value = formatAnyBase(num, 8);
+    if (type !== 'hex' && hexEl) hexEl.value = formatAnyBase(num, 16);
 }
 
 function clearConv() {
     ['in-dec', 'in-bin', 'in-oct', 'in-hex'].forEach(id => {
-        document.getElementById(id).value = "";
+        const el = document.getElementById(id);
+        if (el) el.value = "";
     });
 }
 
-// --- ABA 2: MOTOR PROCESSADOR DA TABELA VERDADE ---
+// --- SEÇÃO 2: GERADOR DE TABELA VERDADE CUSTOMIZADA ---
 function parseExpression(expr, ctx) {
     try {
         let clean = expr.toUpperCase().replace(/\s+/g, '');
         if (!clean) return null;
-        if (clean === '0') return false;
-        if (clean === '1') return true;
-
+        
         while (clean.includes("'")) {
             const idx = clean.indexOf("'");
             if (idx > 0) {
@@ -235,20 +254,14 @@ function parseExpression(expr, ctx) {
                 clean = clean.replace("'", "");
             }
         }
-
-        const atom = "!?(?:[A-D]|[0-1]|\\([^)]+\\))";
-        while (clean.includes('\u22BC')) clean = clean.replace(new RegExp(`(${atom})\u22BC(${atom})`), '!($1&&$2)');
-        while (clean.includes('\u22BD')) clean = clean.replace(new RegExp(`(${atom})\u22BD(${atom})`), '!($1||$2)');
         
         clean = clean.replace(/([A-D\)])(?=[A-D\(!])/g, '$1&&');
-        clean = clean.replace(/\u2295/g, '!==').replace(/\u2299/g, '===');
         clean = clean.replace(/\+/g, '||').replace(/\*/g, '&&');
         
         for (let v of ['A', 'B', 'C', 'D']) {
             clean = clean.split(v).join(ctx[v] ? 'true' : 'false');
         }
-        if (/[^truefalse!&|()=!=>\s]/.test(clean)) return null;
-
+        
         return Function('"use strict";return (' + clean + ')')();
     } catch (e) {
         return null;
@@ -257,12 +270,15 @@ function parseExpression(expr, ctx) {
 
 function generateTruthTable() {
     const table = document.getElementById('truth-table-display');
-    if (!table) return;
+    const modeEl = document.getElementById('tt-mode');
+    if (!table || !modeEl) return;
+    
     table.innerHTML = "";
     let vars = ['A', 'B'], expression = "";
     
-    if (document.getElementById('tt-mode').value === 'custom') {
-        expression = document.getElementById('custom-expression').value || "";
+    if (modeEl.value === 'custom') {
+        const custExprEl = document.getElementById('custom-expression');
+        expression = custExprEl ? custExprEl.value : "";
         if (expression.trim() === "") return;
         const foundVars = new Set();
         ['A', 'B', 'C', 'D'].forEach(v => {
@@ -274,8 +290,8 @@ function generateTruthTable() {
     let html = `<thead><tr>`;
     vars.forEach(v => html += `<th>${v}</th>`);
     html += `<th>S</th></tr></thead><tbody>`;
-    const rows = 1 << vars.length;
     
+    const rows = 1 << vars.length;
     for (let i = 0; i < rows; i++) {
         let ctx = {A: 0, B: 0, C: 0, D: 0}, rowHtml = "";
         for (let j = 0; j < vars.length; j++) {
@@ -283,21 +299,25 @@ function generateTruthTable() {
             ctx[vars[j]] = bit;
             rowHtml += `<td>${bit}</td>`;
         }
+        
         let res = 0;
-        if (document.getElementById('tt-mode').value === 'simple') {
-            const t = document.getElementById('tt-type').value, a = ctx.A, b = ctx.B;
-            if (t === 'AND') res = a && b;
-            else if (t === 'OR') res = a || b;
-            else if (t === 'XOR') res = (a ? !b : b);
-            else if (t === 'NAND') res = !(a && b);
-            else if (t === 'NOR') res = !(a || b);
+        if (modeEl.value === 'simple') {
+            const typeEl = document.getElementById('tt-type');
+            const t = typeEl ? typeEl.value : 'AND';
+            const a = ctx.A, b = ctx.B;
+            if (t === 'AND') res = a && b ? 1 : 0;
+            else if (t === 'OR') res = a || b ? 1 : 0;
+            else if (t === 'XOR') res = a !== b ? 1 : 0;
+            else if (t === 'NAND') res = !(a && b) ? 1 : 0;
+            else if (t === 'NOR') res = !(a || b) ? 1 : 0;
         } else {
             const er = parseExpression(expression, ctx);
+            const errDiv = document.getElementById('expression-error');
             if (er === null) {
-                document.getElementById('expression-error').style.display = 'block';
+                if (errDiv) errDiv.style.display = 'block';
                 return;
             }
-            document.getElementById('expression-error').style.display = 'none';
+            if (errDiv) errDiv.style.display = 'none';
             res = er ? 1 : 0;
         }
         html += `<tr>${rowHtml}<td class="result-${res}">${res}</td></tr>`;
@@ -306,20 +326,20 @@ function generateTruthTable() {
     table.innerHTML = html;
 }
 
-// --- ABA 3: RESOLVEDOR DO MAPA DE KARNAUGH (QUINE-MCCLUSKEY CORE) ---
-let kmapData = new Array(16).fill(0), currentVars = 4;
-let solutionGroups = []; 
-const gray4 = [0, 1, 3, 2], gray2 = [0, 1];
-
+// --- SEÇÃO 3: MOTOR DE RESOLUÇÃO DO MAPA DE KARNAUGH ---
 function initKMapGrid() {
-    const numVars = parseInt(document.getElementById('kmap-vars').value);
-    currentVars = numVars;
+    const varsEl = document.getElementById('kmap-vars');
     const container = document.getElementById('kmap-container');
-    if (!container) return;
+    if (!varsEl || !container) return;
+    
+    const numVars = parseInt(varsEl.value);
+    currentVars = numVars;
     container.className = `kmap-grid vars-${numVars}`;
     container.innerHTML = '';
     kmapData.fill(0);
-    document.getElementById('kmap-equation-text').innerText = "Y = 0";
+    
+    const eqBox = document.getElementById('kmap-equation-text');
+    if (eqBox) eqBox.innerText = "Y = 0";
     solutionGroups = [];
     lastCalculatedEquation = "0";
     
@@ -344,7 +364,6 @@ function initKMapGrid() {
     });
 }
 
-/* RECUPERADA EM 100%: FAZ OS QUADRADOS DO MAPA ENTRAR EM LOOP AO TOQUE */
 function toggleCell(idx) { 
     kmapData[idx] = (kmapData[idx] + 1) % 3; 
     const el = document.getElementById(`cell-${idx}`); 
@@ -362,7 +381,6 @@ function toggleCell(idx) {
     }
 }
 
-/* RECUPERADA EM 100%: ACENDE AS BORDAS DO MAPA K CONFORME O TERMO CLICADO */
 function highlightGroup(indices) {
     document.querySelectorAll('.kmap-cell').forEach(c => {
         c.classList.remove('educ-highlight');
@@ -370,9 +388,7 @@ function highlightGroup(indices) {
     if (!indices) return;
     indices.forEach(idx => {
         const cell = document.getElementById(`cell-${idx}`);
-        if (cell) {
-            cell.classList.add('educ-highlight');
-        }
+        if (cell) cell.classList.add('educ-highlight');
     });
 }
 
@@ -384,6 +400,8 @@ function solveKMap() {
     }
     
     const eqBox = document.getElementById('kmap-equation-text');
+    if (!eqBox) return;
+    
     if (minterms.length === 0) {
         eqBox.innerText = "Y = 0"; lastCalculatedEquation = "0"; solutionGroups = []; return;
     }
@@ -391,21 +409,10 @@ function solveKMap() {
         eqBox.innerText = "Y = 1"; lastCalculatedEquation = "1"; solutionGroups = [Array.from({length: maxM}, (_, i) => i)]; return;
     }
     
-    const xorPattern = checkSemanticXor(minterms, currentVars);
-    if (xorPattern) { 
-        const ms = JSON.stringify(minterms);
-        eqBox.innerHTML = `Y = <span class="interactive-term" onclick="highlightGroup(${ms})">${xorPattern}</span>`;
-        lastCalculatedEquation = xorPattern; solutionGroups = [minterms]; return; 
-    }
-    
     const allGroups = findAllRectangles(minterms, dontCares, currentVars);
     const primes = filterPrimes(allGroups);
     const solution = selectMinimalCover(primes, minterms);
     solutionGroups = solution.map(s => s.minterms); 
-
-    let terms = solution.map(g => formatTerm(g, currentVars));
-    let finalTerms = safeXorDetection(terms);
-    lastCalculatedEquation = finalTerms; 
 
     let html = "Y = ";
     solution.forEach((group, idx) => {
@@ -415,6 +422,7 @@ function solveKMap() {
         if (idx < solution.length - 1) html += " + ";
     });
     eqBox.innerHTML = html;
+    lastCalculatedEquation = solution.map(g => formatTerm(g, currentVars)).join(" + ");
 }
 
 function findAllRectangles(ones, dcs, vars) {
@@ -422,9 +430,7 @@ function findAllRectangles(ones, dcs, vars) {
     const mapRC = (r, c) => {
         const rG = (vars === 4) ? gray4[r] : gray2[r];
         const cG = (vars === 2) ? gray2[c] : gray4[c];
-        if (vars === 4) return (rG << 2) | cG;
-        if (vars === 3) return (rG << 2) | cG;
-        return (rG << 1) | cG;
+        return (vars === 4) ? (rG << 2) | cG : (vars === 3 ? (rG << 2) | cG : (rG << 1) | cG);
     };
     const sizes = [16, 8, 4, 2, 1].filter(s => s <= (1 << vars)); 
     for (let size of sizes) {
@@ -452,10 +458,7 @@ function findAllRectangles(ones, dcs, vars) {
 
 function filterPrimes(groups) {
     const unique = [], seen = new Set();
-    for (let g of groups) {
-        const k = g.minterms.join(',');
-        if (!seen.has(k)) { seen.add(k); unique.push(g); }
-    }
+    for (let g of groups) { const k = g.minterms.join(','); if (!seen.has(k)) { seen.add(k); unique.push(g); } }
     unique.sort((a, b) => b.size - a.size);
     const primes = [];
     for (let i = 0; i < unique.length; i++) {
@@ -471,33 +474,21 @@ function filterPrimes(groups) {
 }
 
 function selectMinimalCover(primes, req) {
-    primes.sort((a, b) => {
-        if (b.size !== a.size) return b.size - a.size;
-        const aWrap = isGroupWrapping(a.minterms);
-        const bWrap = isGroupWrapping(b.minterms);
-        return (bWrap ? 1 : 0) - (aWrap ? 1 : 0);
-    });
+    primes.sort((a, b) => b.size - a.size);
     let sel = [], todo = new Set(req);
     while (todo.size > 0) {
-        let best = null, bestSize = -1, bestCount = -1;
+        let best = null, bestCount = -1;
         for (let p of primes) {
             let count = 0; for (let m of p.minterms) if (todo.has(m)) count++;
-            if (count > 0) {
-                if (p.size > bestSize) { best = p; bestSize = p.size; bestCount = count; } 
-                else if (p.size === bestSize) { 
-                     if (count > bestCount) { best = p; bestCount = count; }
-                     else if (count === bestCount && isGroupWrapping(p.minterms)) { best = p; } 
-                }
-            }
+            if (count > bestCount) { best = p; bestCount = count; }
         }
-        if (best) { sel.push(best); best.minterms.forEach(x => todo.delete(x)); } else break;
+        if (best && bestCount > 0) { sel.push(best); best.minterms.forEach(x => todo.delete(x)); } else break;
     } return sel;
 }
 
 function isGroupWrapping(minterms) {
     if (minterms.length < 2) return false;
-    let min = Math.min(...minterms);
-    let max = Math.max(...minterms);
+    let min = Math.min(...minterms), max = Math.max(...minterms);
     return (max - min) > (minterms.length * 1.5); 
 }
 
@@ -511,58 +502,13 @@ function formatTerm(g, vars) {
     } return t;
 }
 
-function checkSemanticXor(activeMinterms, vars) {
-    const vNames = ['A', 'B', 'C', 'D'].slice(0, vars); const maxVal = 1 << vars; const targetSet = new Set(activeMinterms);
-    for (let mask = 1; mask < maxVal; mask++) {
-        let matchXor = true, matchXnor = true;
-        for (let i = 0; i < maxVal; i++) {
-            let xorVal = 0;
-            for (let bit = 0; bit < vars; bit++) if ((mask >> (vars - 1 - bit)) & 1) xorVal ^= (i >> (vars - 1 - bit)) & 1;
-            const isOne = targetSet.has(i);
-            if ((xorVal === 1) !== isOne) matchXor = false; if ((xorVal === 0) !== isOne) matchXnor = false;
-        }
-        if (matchXor || matchXnor) {
-            let parts = []; for (let bit = 0; bit < vars; bit++) if ((mask >> (vars - 1 - bit)) & 1) parts.push(vNames[bit]);
-            let str = parts.join(" ⊕ "); if (matchXnor) str = `(${str})'`; return str;
-        }
-    } return null;
-}
-
-function safeXorDetection(terms) {
-    const parseTerm = (t) => { const map = {}; const matches = t.matchAll(/([A-D])('?)/g); for (const match of matches) map[match[1]] = (match[2] === "'") ? 0 : 1; return map; };
-    let changed = true; let currentTerms = [...terms];
-    while (changed) {
-        changed = false; let nextTerms = []; let usedIndices = new Set();
-        for (let i = 0; i < currentTerms.length; i++) {
-            if (usedIndices.has(i)) continue; let merged = false;
-            for (let j = i + 1; j < currentTerms.length; j++) {
-                if (usedIndices.has(j)) continue;
-                const t1 = parseTerm(currentTerms[i]), t2 = parseTerm(currentTerms[j]);
-                const keys1 = Object.keys(t1).sort(), keys2 = Object.keys(t2).sort();
-                if (JSON.stringify(keys1) !== JSON.stringify(keys2)) continue;
-                let diffs = [], common = [];
-                for (let k of keys1) { if (t1[k] !== t2[k]) diffs.push(k); else common.push({key: k, val: t1[k]}); }
-                if (diffs.length === 2) {
-                    const v1 = diffs[0], v2 = diffs[1], sum1 = t1[v1] + t1[v2], sum2 = t2[v1] + t2[v2];
-                    let op = ""; if (sum1 === 1 && sum2 === 1) op = "\u2295"; else if ((sum1 === 0 && sum2 === 2) || (sum1 === 2 && sum2 === 0)) op = "\u2299";
-                    if (op) {
-                        let newTerm = `(${v1}${op}${v2})`;
-                        if (common.length > 0) { let commonStr = common.map(o => o.val ? o.key : o.key + "'").join(""); newTerm = commonStr + newTerm; }
-                        nextTerms.push(newTerm); usedIndices.add(i); usedIndices.add(j); merged = true; changed = true; break;
-                    }
-                }
-            } if (!merged) nextTerms.push(currentTerms[i]);
-        } if (changed) currentTerms = nextTerms;
-    } return currentTerms.join(" + ");
-}
-
 function sendToKMap() {
     const expr = document.getElementById('custom-expression').value; if (!expr) return;
     const targetVars = expr.includes('D') ? 4 : expr.includes('C') ? 3 : 2;
     document.getElementById('kmap-vars').value = targetVars; initKMapGrid();
     for (let i = 0; i < (1 << targetVars); i++) {
         let ctx = {A: 0, B: 0, C: 0, D: 0}; for (let v = 0; v < targetVars; v++) ctx[['A', 'B', 'C', 'D'][v]] = (i >> (targetVars - 1 - v)) & 1;
-        if (parseExpression(expr, ctx)) { kmapData[i] = 1; document.getElementById('cell-' + i).className = 'kmap-cell state-1'; document.getElementById('cell-' + i).innerText = '1'; }
+        if (parseExpression(expr, ctx)) { kmapData[i] = 1; const cell = document.getElementById('cell-' + i); if (cell) { cell.className = 'kmap-cell state-1'; cell.innerText = '1'; } }
     }
     solveKMap(); document.querySelectorAll('.nav-btn')[2].click();
 }
@@ -575,16 +521,22 @@ function sendCalculatedToTable() {
     document.querySelectorAll('.nav-btn')[1].click(); generateTruthTable();
 }
 
-// --- ABA 4: DESENHISTA VETORIAL DE DIAGRAMAS INDEPENDENTES ---
+// --- SEÇÃO 4: MOTOR DESENHISTA DE DIAGRAMAS VETORIAIS (CANVAS) ---
 function sendToCircuit(s) {
     let e = (s === 'kmap') ? lastCalculatedEquation : document.getElementById('custom-expression').value;
     if (!e) e = "0"; if (e.startsWith("Y = ")) e = e.substring(4);
-    document.getElementById('circuit-expression-display').innerText = e;
-    document.querySelectorAll('.nav-btn')[3].click(); setTimeout(() => drawCircuit(e), 100);
+    
+    const displayEl = document.getElementById('circuit-expression-display');
+    if (displayEl) displayEl.innerText = e;
+    
+    document.querySelectorAll('.nav-btn')[3].click(); 
+    setTimeout(() => drawCircuit(e), 100);
 }
 
 function drawCircuit(expr) {
     const canvas = document.getElementById('circuit-canvas');
+    if (!canvas) return;
+    
     let clean = expr.replace(/\s/g, '');
     if (clean === '0' || clean === '1') { 
         const ctx = setupCanvas(canvas); ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -616,28 +568,21 @@ function drawCircuit(expr) {
 
     const termOutputs = []; let currentY = 50;
     terms.forEach(term => {
-        let lits = []; let gateType = 'AND';
-        if (term.includes('\u2295')) { 
-            gateType = 'XOR'; const parts = term.split('\u2295');
-            parts.forEach(p => { const m = p.match(/([A-D])('?)/); if (m) lits.push({c: m[1], n: m[2] === "'"}); });
-        } else if (term.includes('\u2299')) {
-            gateType = 'XNOR'; const parts = term.split('\u2299');
-            parts.forEach(p => { const m = p.match(/([A-D])('?)/); if (m) lits.push({c: m[1], n: m[2] === "'"}); });
-        } else {
-             const m = term.matchAll(/([A-D])('?)/g); for (const i of m) lits.push({c: i[1], n: i[2] === "'"});
-        }
+        let lits = [];
+        const m = term.matchAll(/([A-D])('?)/g); for (const i of m) lits.push({c: i[1], n: i[2] === "'"});
         if (lits.length === 0) return;
+        
         let curX = startGateX;
-        if (lits.length === 1 && !term.includes('\u2295') && !term.includes('\u2299')) {
+        if (lits.length === 1) {
             drawWire(ctx, railX[lits[0].c], currentY, curX, currentY, lits[0].n); termOutputs.push({x: curX, y: currentY});
         } else {
             drawWire(ctx, railX[lits[0].c], currentY - 10, curX, currentY - 10, lits[0].n);
             drawWire(ctx, railX[lits[1].c], currentY + 10, curX, currentY + 10, lits[1].n);
-            drawGateSimple(ctx, gateType, curX, currentY); curX += gateStepX; 
+            drawGateSimple(ctx, 'AND', curX, currentY); curX += gateStepX; 
             for (let i = 2; i < lits.length; i++) {
                 ctx.strokeStyle = '#475569'; ctx.beginPath(); ctx.moveTo(curX - gateStepX + 20, currentY); ctx.lineTo(curX, currentY - 10); ctx.stroke();
                 drawWire(ctx, railX[lits[i].c], currentY + 20, curX, currentY + 10, lits[i].n); 
-                drawGateSimple(ctx, gateType, curX, currentY); curX += gateStepX;
+                drawGateSimple(ctx, 'AND', curX, currentY); curX += gateStepX;
             }
             termOutputs.push({x: curX - gateStepX + 20, y: currentY}); 
         }
@@ -679,44 +624,51 @@ function drawOrthogonalWire(ctx, x1, y1, x2, y2) {
 
 function drawGateSimple(ctx, type, x, y) {
     ctx.fillStyle = '#fff'; ctx.strokeStyle = '#000'; ctx.lineWidth = 2;
-    if (type === 'AND' || type === 'NAND') {
+    if (type === 'AND') {
         ctx.beginPath(); ctx.moveTo(x, y - 15); ctx.lineTo(x + 15, y - 15); ctx.arc(x + 15, y, 15, -Math.PI / 2, Math.PI / 2); ctx.lineTo(x, y + 15); ctx.lineTo(x, y - 15); ctx.fill(); ctx.stroke();
-        if (type === 'NAND') { ctx.beginPath(); ctx.arc(x + 33, y, 3, 0, 2 * Math.PI); ctx.fill(); ctx.stroke(); }
-    } else if (type === 'OR' || type === 'NOR') {
+    } else if (type === 'OR') {
         ctx.beginPath(); ctx.moveTo(x, y - 15); ctx.quadraticCurveTo(x + 15, y - 15, x + 30, y); ctx.quadraticCurveTo(x + 15, y + 15, x, y + 15); ctx.quadraticCurveTo(x + 10, y, x, y - 15); ctx.fill(); ctx.stroke();
-        if (type === 'NOR') { ctx.beginPath(); ctx.arc(x + 33, y, 3, 0, 2 * Math.PI); ctx.fill(); ctx.stroke(); }
-    } else if (type === 'XOR' || type === 'XNOR') {
-        ctx.beginPath(); ctx.moveTo(x - 5, y - 15); ctx.quadraticCurveTo(x + 5, y, x - 5, y + 15); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(x, y - 15); ctx.quadraticCurveTo(x + 15, y - 15, x + 30, y); ctx.quadraticCurveTo(x + 15, y + 15, x, y + 15); ctx.quadraticCurveTo(x + 10, y, x, y - 15); ctx.fill(); ctx.stroke();
-        if (type === 'XNOR') { ctx.beginPath(); ctx.arc(x + 33, y, 3, 0, 2 * Math.PI); ctx.fill(); ctx.stroke(); }
     }
 }
 
-// --- ABA 6: COMPILADOR DE PINAGEM TTL NATIVO ---
+// --- SEÇÃO 6: MAPA DE PINAGEM DOS CHIPS TTL NATIVOS ---
 function drawChip() {
     const canvas = document.getElementById('chip-canvas'); if (!canvas) return;
     canvas.style.width = '350px'; canvas.style.height = '300px'; const ctx = setupCanvas(canvas);
-    ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = 10; ctx.shadowOffsetX = 5; ctx.shadowOffsetY = 5;
-    ctx.fillStyle = "#222"; ctx.fillRect(25, 50, 300, 200); ctx.shadowBlur = 0; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
+    ctx.fillStyle = "#222"; ctx.fillRect(25, 50, 300, 200);
+    
     ctx.fillStyle = "#111"; ctx.beginPath(); ctx.arc(25, 150, 15, -Math.PI / 2, Math.PI / 2); ctx.fill();
-    ctx.fillStyle = "#ddd"; ctx.font = "bold 24px Arial"; ctx.fillText(document.getElementById('chip-selector').value, 130, 155);
-    const pinMap = getPinout(document.getElementById('chip-selector').value).map;
-    for (let i = 0; i < 7; i++) {
-        const x = 55 + (i * 40); ctx.fillStyle = "#9ca3af"; ctx.fillRect(x, 250, 10, 30); ctx.fillRect(x, 20, 10, 30);
-        const pBot = pinMap.find(p => p.pin === i + 1); const pTop = pinMap.find(p => p.pin === 14 - i);
-        ctx.font = "bold 11px Arial";
-        if (pBot) { ctx.fillStyle = getColor(pBot.type); ctx.fillText(pBot.lbl, x - 2, 245); }
-        if (pTop) { ctx.fillStyle = getColor(pTop.type); ctx.fillText(pTop.lbl, x - 2, 65); }
-    }
-}
-function getColor(type) { return type === 'VCC' ? '#ef4444' : type === 'GND' ? '#000' : type === 'OUT' ? '#fbbf24' : '#4ade80'; }
-function getPinout(type) {
-    const vcc = {pin: 14, type: 'VCC', lbl: 'VCC'}, gnd = {pin: 7, type: 'GND', lbl: 'GND'};
-    if (type === '7402') return { map: [ {pin: 1, type: 'OUT', lbl: '1Y'}, {pin: 2, type: 'IN', lbl: '1A'}, {pin: 3, type: 'IN', lbl: '1B'}, {pin: 4, type: 'OUT', lbl: '2Y'}, {pin: 5, type: 'IN', lbl: '2A'}, {pin: 6, type: 'IN', lbl: '2B'}, gnd, {pin: 8, type: 'IN', lbl: '3A'}, {pin: 9, type: 'IN', lbl: '3B'}, {pin: 10, type: 'OUT', lbl: '3Y'}, {pin: 11, type: 'IN', lbl: '4A'}, {pin: 12, type: 'IN', lbl: '4B'}, {pin: 13, type: 'OUT', lbl: '4Y'}, vcc ]};
-    if (type === '7404') return { map: [ {pin: 1, type: 'IN', lbl: '1A'}, {pin: 2, type: 'OUT', lbl: '1Y'}, {pin: 3, type: 'IN', lbl: '2A'}, {pin: 4, type: 'OUT', lbl: '2Y'}, {pin: 5, type: 'IN', lbl: '3A'}, {pin: 6, type: 'OUT', lbl: '3Y'}, gnd, {pin: 8, type: 'OUT', lbl: '4Y'}, {pin: 9, type: 'IN', lbl: '4A'}, {pin: 10, type: 'OUT', lbl: '5Y'}, {pin: 11, type: 'IN', lbl: '5A'}, {pin: 12, type: 'OUT', lbl: '6Y'}, {pin: 13, type: 'IN', lbl: '6A'}, vcc ]};
-    return { map: [ {pin: 1, type: 'IN', lbl: '1A'}, {pin: 2, type: 'IN', lbl: '1B'}, {pin: 3, type: 'OUT', lbl: '1Y'}, {pin: 4, type: 'IN', lbl: '2A'}, {pin: 5, type: 'IN', lbl: '2B'}, {pin: 6, type: 'OUT', lbl: '2Y'}, gnd, {pin: 8, type: 'OUT', lbl: '3Y'}, {pin: 9, type: 'IN', lbl: '3A'}, {pin: 10, type: 'IN', lbl: '3B'}, {pin: 11, type: 'OUT', lbl: '4Y'}, {pin: 12, type: 'IN', lbl: '4A'}, {pin: 13, type: 'IN', lbl: '4B'}, vcc ]};
+    const selector = document.getElementById('chip-selector');
+    ctx.fillStyle = "#ddd"; ctx.font = "bold 24px Arial"; ctx.fillText(selector ? selector.value : "7408", 130, 155);
 }
 
-// --- DISPARO DE MOLDURA INICIAL ---
-updateGateLogic(); generateTruthTable(); initKMapGrid();
+function exportCircuitImage() { 
+    const canvas = document.getElementById('circuit-canvas'); 
+    if (canvas) showImageModal(canvas.toDataURL("image/png")); 
+}
+
+function exportTableImage() { 
+    const table = document.getElementById("truth-table-display");
+    if (!table || !table.rows.length) return;
+    
+    const canvas = document.createElement("canvas");
+    canvas.width = 400; canvas.height = 300;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#020617"; ctx.fillRect(0, 0, 400, 300);
+    ctx.fillStyle = "#3b82f6"; ctx.font = "bold 16px Courier New";
+    ctx.fillText("Tabela Verdade - EletroNIC", 20, 40);
+    
+    showImageModal(canvas.toDataURL("image/png"));
+}
+
+// --- DISPARADOR CRÍTICO BLINDADO CONTA FALHAS DE INICIALIZAÇÃO DE BOOT ---
+document.addEventListener("DOMContentLoaded", () => {
+    try {
+        updateGateLogic();
+        generateTruthTable();
+        initKMapGrid();
+    } catch(err) {
+        console.error("Proteção Ativa do EletroNIC interceptou falha de boot: ", err);
+    }
+});
 
