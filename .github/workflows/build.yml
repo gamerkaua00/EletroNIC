@@ -44,11 +44,15 @@ jobs:
           cd app
           cordova platform add android
 
+      # --- PASSO ATUALIZADO PARA SUPORTAR A REFATORAÇÃO ---
       - name: Inject & Protect Source Code
         run: |
           rm app/www/index.html
           
-          echo "Aplicando proteção de código..."
+          echo "Criando diretórios nativos no Cordova..."
+          mkdir -p app/www/css app/www/js
+          
+          echo "Aplicando proteção de código e minificando o HTML..."
           html-minifier-terser \
             --collapse-whitespace \
             --remove-comments \
@@ -56,6 +60,10 @@ jobs:
             --minify-js true \
             --output app/www/index.html \
             index.html
+          
+          echo "Movendo scripts e estilos estruturados das novas pastas..."
+          if [ -d "css" ]; then cp -r css/* app/www/css/; fi
+          if [ -d "js" ]; then cp -r js/* app/www/js/; fi
           
           echo "Configurando preferências visuais..."
           sed -i '/<\/widget>/i \    <preference name="ShowSplashScreen" value="false" />' app/config.xml
@@ -77,8 +85,7 @@ jobs:
           cd app
           cordova build android --release -- --packageType=apk
 
-      # --- ASSINATURA CORRIGIDA ---
-      # Nomes dos parâmetros atualizados para a ação ilharp
+      # --- ASSINATURA DIGITAL ---
       - name: Sign APK
         id: sign_app
         uses: ilharp/sign-android-release@v1
@@ -90,7 +97,7 @@ jobs:
           keyPassword: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           buildToolsVersion: ${{ steps.android_tools.outputs.version }}
         
-      # Upload do APK
+      # Upload do artefato final para download
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
