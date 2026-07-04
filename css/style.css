@@ -1,7 +1,3 @@
-/* ==========================================================================
-   css/style.css - ENGINE VISUAL DO ELETRONIC (KMZ TECHNOLOGIES 2026)
-   ========================================================================== */
-
 :root {
     --primary: #3b82f6;
     --primary-dark: #2563eb;
@@ -35,7 +31,6 @@
     user-select: none;
 }
 
-/* Permitir seleção apenas em inputs para o usuário digitar */
 input, textarea {
     -webkit-user-select: text;
     -moz-user-select: text;
@@ -89,7 +84,6 @@ body {
     text-transform: uppercase;
     font-weight: 600;
 }
-
 @keyframes pulseLogo {
     0% { transform: scale(1); filter: drop-shadow(0 0 15px rgba(59, 130, 246, 0.4)); }
     50% { transform: scale(1.05); filter: drop-shadow(0 0 25px rgba(59, 130, 246, 0.7)); }
@@ -98,11 +92,6 @@ body {
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
-}
-.hidden-splash {
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
 }
 
 /* --- HEADER --- */
@@ -151,7 +140,7 @@ main {
     transform: translateY(0);
 }
 
-/* --- CARDS & CONTAINERS --- */
+/* --- CARDS --- */
 .card {
     background-color: var(--surface);
     border-radius: var(--radius);
@@ -174,7 +163,7 @@ h3 {
     margin-top: 5px;
 }
 
-/* --- FORM ELEMENTS --- */
+/* --- INPUTS --- */
 label {
     display: block;
     margin-bottom: 6px;
@@ -196,6 +185,11 @@ select, input[type="text"], input[type="number"], input[type="email"] {
 select:focus, input:focus {
     border-color: var(--primary);
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+input[type="text"] {
+    font-family: 'Courier New', monospace;
+    letter-spacing: 1px;
+    font-weight: bold;
 }
 input[readonly] {
     cursor: pointer;
@@ -268,7 +262,7 @@ input[readonly] {
 /* --- CANVAS --- */
 .canvas-container { overflow: auto; -webkit-overflow-scrolling: touch; border-radius: 12px; border: 1px solid var(--border); background: #ffffff; touch-action: pan-x pan-y; display: flex; justify-content: center; padding: 10px; min-height: 300px; }
 
-/* --- MODALS SISTEMA --- */
+/* --- SYSTEM MODALS --- */
 .modal {
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
@@ -301,26 +295,8 @@ input[readonly] {
     position: relative;
 }
 .modal-content img { width: 100%; height: 100%; object-fit: contain; border-radius: 4px; background: #fff; }
-.close-modal {
-    position: absolute;
-    top: 5px; right: 10px;
-    color: var(--danger);
-    font-size: 3rem;
-    cursor: pointer;
-    line-height: 0.8;
-    font-weight: 900;
-    z-index: 102;
-    background: rgba(0,0,0,0.5);
-    border-radius: 50%;
-    width: 50px; height: 50px;
-    text-align: center;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.close-modal:active { transform: scale(0.9); background: rgba(255,255,255,0.2); }
 
-/* --- ACESSÓRIOS DO HISTÓRICO DE SUPORTE --- */
+/* --- LISTAGEM DE HISTÓRICO LOCAL --- */
 .history-list { width: 100%; max-height: 180px; overflow-y: auto; margin-top: 10px; border-radius: 8px; }
 .history-item {
     background: rgba(255, 255, 255, 0.02);
@@ -340,23 +316,19 @@ input[readonly] {
 /* --- NAVBAR --- */
 nav { background: rgba(30, 41, 59, 0.95); backdrop-filter: blur(10px); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 10px 0; padding-bottom: max(10px, env(safe-area-inset-bottom)); position: fixed; bottom: 0; width: 100%; z-index: 50; }
 .nav-btn { background: none; border: none; color: var(--text-muted); font-size: 0.65rem; display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; width: 14%; transition: color 0.2s; position: relative; }
-.nav-btn svg { width: 24px; height: 24px; fill: currentColor; transition: transform 0.2s; }
+.nav-btn svg { width: 24px; height: 24px; fill: currentColor; }
 .nav-btn.active { color: var(--primary); font-weight: 600; }
-.nav-btn.active svg { transform: translateY(-3px); filter: drop-shadow(0 4px 6px rgba(59, 130, 246, 0.5)); }
 
-/* --- SWITCHES (SIMULADOR) --- */
 .switch { position: relative; display: inline-block; width: 52px; height: 30px; }
 .switch input { opacity: 0; width: 0; height: 0; }
 .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--surface-light); transition: .3s; border-radius: 34px; border: 1px solid var(--border); }
-.slider:before { position: absolute; content: ""; height: 22px; width: 22px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+.slider:before { position: absolute; content: ""; height: 22px; width: 22px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
 input:checked + .slider { background-color: var(--success); border-color: var(--success); }
 input:checked + .slider:before { transform: translateX(22px); }
 
 .gate-visualizer { display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 20px 0; width: 100%; }
 .io-row { display: flex; align-items: center; gap: 20px; width: 100%; justify-content: center; }
 .io-ctrl { display: flex; flex-direction: column; align-items: center; gap: 5px; }
-
-/* --- UTILITÁRIOS --- */
 .hidden { display: none !important; }
 .flex-between { display: flex; justify-content: space-between; align-items: center; }
 .conv-row { display: flex; align-items: center; margin-bottom: 12px; gap: 12px; }
@@ -365,20 +337,14 @@ input:checked + .slider:before { transform: translateX(22px); }
 .res-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 0.95rem; }
 .res-row span:last-child { font-family: 'Courier New', monospace; color: var(--success); font-weight: bold; }
 
-/* --- AJUDA / MANUAL --- */
 details { background: var(--surface-light); border-radius: 8px; margin-bottom: 10px; padding: 0; overflow: hidden; }
 summary { padding: 15px; cursor: pointer; font-weight: bold; color: var(--text); list-style: none; display: flex; justify-content: space-between; align-items: center; }
 summary:after { content: '+'; font-size: 1.2rem; color: var(--primary); }
 details[open] summary:after { content: '-'; }
-details[open] summary { border-bottom: 1px solid var(--border); }
 .manual-content { padding: 15px; font-size: 0.95rem; color: var(--text-muted); line-height: 1.6; }
-
 .contact-item { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; font-size: 0.95rem; }
 .contact-item svg { fill: var(--primary); width: 20px; height: 20px; flex-shrink: 0; }
 .contact-label { color: var(--text-muted); min-width: 60px; }
 .contact-value { color: var(--text); font-family: 'Courier New', monospace; font-weight: bold; }
 .kmz-footer { text-align: center; font-size: 0.7rem; color: var(--text-muted); opacity: 0.5; padding: 5px; margin-top: 10px; }
-
-/* --- TIMERS & SPIN ENGINES --- */
-@keyframes spin { to { transform: rotate(360deg); } }
 
