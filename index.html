@@ -407,7 +407,23 @@
         </div>
     </div>
 
-    <!-- INJEÇÃO DOS MOTORES JAVASCRIPT ISOLADOS (ORDEM DE CARREGAMENTO CRUCIAL) -->
+        <!-- MOTOR DE INICIALIZAÇÃO SEGURO (INLINE) -->
+    <script>
+        // Garante o fechamento da Splash Screen independente dos arquivos externos
+        window.addEventListener('load', () => {
+            const splash = document.getElementById('splash-screen');
+            setTimeout(() => {
+                if (splash) {
+                    splash.style.opacity = '0';
+                    setTimeout(() => {
+                        splash.style.display = 'none';
+                    }, 600);
+                }
+            }, 2000); // 2 segundos cravados de exibição
+        });
+    </script>
+
+    <!-- INJEÇÃO DOS MOTORES JAVASCRIPT ISOLADOS -->
     <script src="js/core-app.js"></script>
     <script src="js/volt-ia.js"></script>
 </body>
