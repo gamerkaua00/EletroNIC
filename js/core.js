@@ -3,27 +3,18 @@
    © 2026 KMZ Technologies - Todos os direitos reservados.
    ========================================================================== */
 
-// --- STATE GLOBAL ---
+// --- ESTADO GLOBAL DO APLICATIVO ---
 let lastCalculatedEquation = "";
-console.log("EletroNIC Engine Iniciada. Copyright © 2026 KMZ. Todos os direitos reservados.");
+console.log("EletroNIC Engine Principal Carregada. Copyright © 2026 KMZ.");
 
-// --- TELA DE ABERTURA (SPLASH SCREEN LOGIC) ---
-window.addEventListener('load', () => {
-    const splash = document.getElementById('splash-screen');
-    setTimeout(() => {
-        if (splash) {
-            splash.style.opacity = '0';
-            setTimeout(() => {
-                splash.style.display = 'none';
-            }, 600);
-        }
-    }, 2500); // 2.5 segundos de exibição nativa do EletroNIC
-});
-
-// --- UI & TRANSIÇÃO DE ABAS ---
+// --- SISTEMA DE NAVEGAÇÃO ENTRE ABAS ---
 function switchTab(tabId, btn) {
-    document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
-    document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.view-section').forEach(el => {
+        el.classList.remove('active');
+    });
+    document.querySelectorAll('.nav-btn').forEach(el => {
+        el.classList.remove('active');
+    });
     
     const targetSection = document.getElementById('section-' + tabId);
     if (targetSection) {
@@ -55,7 +46,7 @@ function backspace() {
     input.value = input.value.slice(0, -1); 
 }
 
-// --- SISTEMA DE MODAL (WEBVIEW COMPARTILHAMENTO) ---
+// --- POPUP GERENCIADOR DE PRINTS (EXPORTAÇÃO DE MATRIZES) ---
 function showImageModal(dataUrl) {
     const modal = document.getElementById('export-modal');
     const img = document.getElementById('modal-img');
@@ -63,8 +54,6 @@ function showImageModal(dataUrl) {
         img.src = dataUrl;
         modal.classList.add('visible');
     }
-    
-    // Hook para extensões do App Inventor (se aplicável)
     if (window.AppInventor && window.AppInventor.setWebViewString) {
         window.AppInventor.setWebViewString("IMAGE:" + dataUrl);
     }
@@ -74,7 +63,7 @@ function closeModal() {
     document.getElementById('export-modal').classList.remove('visible');
 }
 
-// --- CANVAS HIGH DPI HELPER (PREVINE RENDERIZAÇÃO BORRADA) ---
+// --- CANVAS HIGH DPI HELPER (PREVINE RENDERIZAÇÃO BORRADA NO ANDROID) ---
 function setupCanvas(canvas) {
     const dpr = window.devicePixelRatio || 1;
     const rect = canvas.getBoundingClientRect();
@@ -87,7 +76,7 @@ function setupCanvas(canvas) {
     return ctx;
 }
 
-// --- MOTOR DO SIMULADOR DE PORTAS ---
+// --- ABA 1: SIMULADOR INTERATIVO DE PORTAS LÓGICAS ---
 function updateGateLogic() {
     const gate = document.getElementById('gate-selector').value;
     const a = document.getElementById('inputA').checked;
@@ -96,13 +85,21 @@ function updateGateLogic() {
     document.getElementById('inputB-container').style.opacity = gate === 'NOT' ? '0.2' : '1';
     let res = false;
     
-    if (gate === 'AND') res = a && b; 
-    else if (gate === 'OR') res = a || b; 
-    else if (gate === 'NOT') res = !a;
-    else if (gate === 'NAND') res = !(a && b); 
-    else if (gate === 'NOR') res = !(a || b); 
-    else if (gate === 'XOR') res = a !== b; 
-    else if (gate === 'XNOR') res = a === b;
+    if (gate === 'AND') {
+        res = a && b;
+    } else if (gate === 'OR') {
+        res = a || b;
+    } else if (gate === 'NOT') {
+        res = !a;
+    } else if (gate === 'NAND') {
+        res = !(a && b);
+    } else if (gate === 'NOR') {
+        res = !(a || b);
+    } else if (gate === 'XOR') {
+        res = a !== b;
+    } else if (gate === 'XNOR') {
+        res = a === b;
+    }
     
     const led = document.getElementById('outputLed');
     if (led) {
@@ -114,7 +111,9 @@ function updateGateLogic() {
     
     let svg = `<svg viewBox="0 0 100 60" style="width:100%;height:100%"><defs><filter id="glow"><feGaussianBlur stdDeviation="1.5" result="coloredBlur"/><feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>`;
     svg += `<path d="M10,20 L30,20" stroke="var(--text-muted)" stroke-width="2"/>`;
-    if (gate !== 'NOT') svg += `<path d="M10,40 L30,40" stroke="var(--text-muted)" stroke-width="2"/>`;
+    if (gate !== 'NOT') {
+        svg += `<path d="M10,40 L30,40" stroke="var(--text-muted)" stroke-width="2"/>`;
+    }
     svg += `<text x="50" y="35" fill="var(--primary)" font-weight="bold" font-family="Arial" text-anchor="middle" dominant-baseline="middle" font-size="14">${gate}</text>`;
     svg += `<rect x="30" y="10" width="40" height="40" rx="5" fill="none" stroke="var(--primary)" stroke-width="2" filter="url(#glow)"/>`;
     svg += `<path d="M70,30 L90,30" stroke="${res?'var(--success)':'var(--text-muted)'}" stroke-width="2"/>`;
@@ -122,20 +121,22 @@ function updateGateLogic() {
     document.getElementById('gate-svg').innerHTML = svg;
 }
 
-// --- CONVERSOR DE BASES NUMÉRICAS ---
+// --- ABA 5: CALCULADORA MATRICIAL E CONVERSOR DE BASES ---
 function parseAnyBase(str, base) {
-    str = str.replace(',', '.'); 
+    str = str.replace(',', '.');
     if (!str) return NaN;
-    const parts = str.split('.'); 
+    const parts = str.split('.');
     let val = parseInt(parts[0], base);
     if (parts.length > 1) {
-        let frac = 0; 
-        for (let i = 0; i < parts[1].length; i++) { 
-            const digit = parseInt(parts[1][i], base); 
-            if (!isNaN(digit)) frac += digit * Math.pow(base, -(i + 1)); 
+        let frac = 0;
+        for (let i = 0; i < parts[1].length; i++) {
+            const digit = parseInt(parts[1][i], base);
+            if (!isNaN(digit)) {
+                frac += digit * Math.pow(base, -(i + 1));
+            }
         }
         val += frac;
-    } 
+    }
     return val;
 }
 
@@ -144,16 +145,16 @@ function formatAnyBase(num, base) {
     let intPart = Math.floor(num);
     let fracPart = num - intPart;
     let res = intPart.toString(base).toUpperCase();
-    if (fracPart > 0.000001) { 
-        res += ","; 
-        let limit = 8; 
-        while (fracPart > 0.000001 && limit > 0) { 
-            fracPart *= base; 
-            let digit = Math.floor(fracPart); 
-            res += digit.toString(base).toUpperCase(); 
-            fracPart -= digit; 
-            limit--; 
-        } 
+    if (fracPart > 0.000001) {
+        res += ",";
+        let limit = 8;
+        while (fracPart > 0.000001 && limit > 0) {
+            fracPart *= base;
+            let digit = Math.floor(fracPart);
+            res += digit.toString(base).toUpperCase();
+            fracPart -= digit;
+            limit--;
+        }
     }
     return res;
 }
@@ -172,7 +173,12 @@ function calcUniversal() {
     
     if (isNaN(valA) || isNaN(valB)) return;
     const op = document.getElementById('calc-op').value;
-    let res = (op === '+') ? valA + valB : (op === '-') ? valA - valB : (op === '*') ? valA * valB : (valB !== 0 ? valA / valB : 0);
+    let res = 0;
+    
+    if (op === '+') res = valA + valB;
+    else if (op === '-') res = valA - valB;
+    else if (op === '*') res = valA * valB;
+    else res = (valB !== 0 ? valA / valB : 0);
     
     document.getElementById('calc-results').style.display = 'block';
     document.getElementById('res-dec').innerText = formatAnyBase(res, 10);
@@ -184,9 +190,11 @@ function calcUniversal() {
 function convertBase(type) {
     const ids = {dec: 'in-dec', bin: 'in-bin', oct: 'in-oct', hex: 'in-hex'};
     let raw = document.getElementById(ids[type]).value.trim();
-    if (!raw) { 
-        for (let k in ids) if (k !== type) document.getElementById(ids[k]).value = ""; 
-        return; 
+    if (!raw) {
+        for (let k in ids) {
+            if (k !== type) document.getElementById(ids[k]).value = "";
+        }
+        return;
     }
     let num = parseAnyBase(raw, type === 'bin' ? 2 : type === 'oct' ? 8 : type === 'hex' ? 16 : 10);
     if (type !== 'dec') document.getElementById(ids.dec).value = formatAnyBase(num, 10);
@@ -195,14 +203,16 @@ function convertBase(type) {
     if (type !== 'hex') document.getElementById(ids.hex).value = formatAnyBase(num, 16);
 }
 
-function clearConv() { 
-    ['in-dec', 'in-bin', 'in-oct', 'in-hex'].forEach(id => document.getElementById(id).value = ""); 
+function clearConv() {
+    ['in-dec', 'in-bin', 'in-oct', 'in-hex'].forEach(id => {
+        document.getElementById(id).value = "";
+    });
 }
 
-// --- PARSER BOOLEANO E PROTEÇÃO SANITIZADA ---
+// --- ABA 2: MOTOR PROCESSADOR DA TABELA VERDADE ---
 function parseExpression(expr, ctx) {
     try {
-        let clean = expr.toUpperCase().replace(/\s+/g, ''); 
+        let clean = expr.toUpperCase().replace(/\s+/g, '');
         if (!clean) return null;
         if (clean === '0') return false;
         if (clean === '1') return true;
@@ -234,21 +244,20 @@ function parseExpression(expr, ctx) {
         clean = clean.replace(/\u2295/g, '!==').replace(/\u2299/g, '===');
         clean = clean.replace(/\+/g, '||').replace(/\*/g, '&&');
         
-        for (let v of ['A', 'B', 'C', 'D']) clean = clean.split(v).join(ctx[v] ? 'true' : 'false');
-
-        if (/[^truefalse!&|()=!=>\s]/.test(clean)) {
-            console.error("Tentativa de injeção bloqueada:", clean);
-            return null;
+        for (let v of ['A', 'B', 'C', 'D']) {
+            clean = clean.split(v).join(ctx[v] ? 'true' : 'false');
         }
+        if (/[^truefalse!&|()=!=>\s]/.test(clean)) return null;
 
         return Function('"use strict";return (' + clean + ')')();
-    } catch (e) { 
-        return null; 
+    } catch (e) {
+        return null;
     }
 }
 
 function generateTruthTable() {
-    const table = document.getElementById('truth-table-display'); 
+    const table = document.getElementById('truth-table-display');
+    if (!table) return;
     table.innerHTML = "";
     let vars = ['A', 'B'], expression = "";
     
@@ -256,88 +265,131 @@ function generateTruthTable() {
         expression = document.getElementById('custom-expression').value || "";
         if (expression.trim() === "") return;
         const foundVars = new Set();
-        ['A', 'B', 'C', 'D'].forEach(v => { if (expression.toUpperCase().includes(v)) foundVars.add(v); });
+        ['A', 'B', 'C', 'D'].forEach(v => {
+            if (expression.toUpperCase().includes(v)) foundVars.add(v);
+        });
         if (foundVars.size > 0) vars = Array.from(foundVars).sort();
     }
     
-    let html = `<thead><tr>`; 
-    vars.forEach(v => html += `<th>${v}</th>`); 
+    let html = `<thead><tr>`;
+    vars.forEach(v => html += `<th>${v}</th>`);
     html += `<th>S</th></tr></thead><tbody>`;
     const rows = 1 << vars.length;
     
     for (let i = 0; i < rows; i++) {
         let ctx = {A: 0, B: 0, C: 0, D: 0}, rowHtml = "";
         for (let j = 0; j < vars.length; j++) {
-            const bit = (i >> (vars.length - 1 - j)) & 1; 
-            ctx[vars[j]] = bit; 
+            const bit = (i >> (vars.length - 1 - j)) & 1;
+            ctx[vars[j]] = bit;
             rowHtml += `<td>${bit}</td>`;
         }
         let res = 0;
         if (document.getElementById('tt-mode').value === 'simple') {
             const t = document.getElementById('tt-type').value, a = ctx.A, b = ctx.B;
-            if (t === 'AND') res = a && b; 
-            else if (t === 'OR') res = a || b; 
+            if (t === 'AND') res = a && b;
+            else if (t === 'OR') res = a || b;
             else if (t === 'XOR') res = (a ? !b : b);
-            else if (t === 'NAND') res = !(a && b); 
+            else if (t === 'NAND') res = !(a && b);
             else if (t === 'NOR') res = !(a || b);
         } else {
             const er = parseExpression(expression, ctx);
-            if (er === null) { 
-                document.getElementById('expression-error').style.display = 'block'; 
-                return; 
+            if (er === null) {
+                document.getElementById('expression-error').style.display = 'block';
+                return;
             }
             document.getElementById('expression-error').style.display = 'none';
-            res = er;
+            res = er ? 1 : 0;
         }
-        html += `<tr>${rowHtml}<td class="result-${res?1:0}">${res?1:0}</td></tr>`;
+        html += `<tr>${rowHtml}<td class="result-${res}">${res}</td></tr>`;
     }
-    html += `</tbody>`; 
+    html += `</tbody>`;
     table.innerHTML = html;
 }
 
-// --- ALGORITMO COMPLETO DE QUINE-MCCLUSKEY (MAPA K) ---
+// --- ABA 3: RESOLVEDOR DO MAPA DE KARNAUGH (QUINE-MCCLUSKEY CORE) ---
 let kmapData = new Array(16).fill(0), currentVars = 4;
 let solutionGroups = []; 
 const gray4 = [0, 1, 3, 2], gray2 = [0, 1];
 
 function initKMapGrid() {
-    const numVars = parseInt(document.getElementById('kmap-vars').value); currentVars = numVars;
-    const container = document.getElementById('kmap-container'); container.className = `kmap-grid vars-${numVars}`; container.innerHTML = '';
-    kmapData.fill(0); document.getElementById('kmap-equation-text').innerText = "Y = 0"; solutionGroups = [];
+    const numVars = parseInt(document.getElementById('kmap-vars').value);
+    currentVars = numVars;
+    const container = document.getElementById('kmap-container');
+    if (!container) return;
+    container.className = `kmap-grid vars-${numVars}`;
+    container.innerHTML = '';
+    kmapData.fill(0);
+    document.getElementById('kmap-equation-text').innerText = "Y = 0";
+    solutionGroups = [];
     lastCalculatedEquation = "0";
     
-    let rowsGray = numVars===4?gray4:gray2, colsGray = numVars===3?gray4:(numVars===4?gray4:gray2);
-    let label = numVars===4?"AB\\CD":(numVars===3?"A\\BC":"A\\B");
+    let rowsGray = numVars === 4 ? gray4 : gray2;
+    let colsGray = numVars === 3 ? gray4 : (numVars === 4 ? gray4 : gray2);
+    let label = numVars === 4 ? "AB\\CD" : (numVars === 3 ? "A\\BC" : "A\\B");
     
     container.innerHTML += `<div class="kmap-corner">${label}</div>`;
-    (numVars>=3?['00','01','11','10']:['0','1']).forEach(l => container.innerHTML += `<div class="kmap-header">${l}</div>`);
+    (numVars >= 3 ? ['00','01','11','10'] : ['0','1']).forEach(l => container.innerHTML += `<div class="kmap-header">${l}</div>`);
     
-    (numVars===4?['00','01','11','10']:['0','1']).forEach((rLab, rIdx) => {
-        container.innerHTML += `<div class="kmap-header">${rLab}</div>`;
+    rowsGray.forEach((rVal, rIdx) => {
+        let labels4 = ['00', '01', '11', '10'];
+        let rLabelText = numVars === 4 ? labels4[rIdx] : rVal.toString();
+        container.innerHTML += `<div class="kmap-header">${rLabelText}</div>`;
         colsGray.forEach((cVal) => {
-            const rVal = rowsGray[rIdx]; let minterm = 0;
-            if(numVars===4) minterm=(rVal<<2)|cVal; else if(numVars===3) minterm=(rVal<<2)|cVal; else minterm=(rVal<<1)|cVal;
+            let minterm = 0;
+            if (numVars === 4) minterm = (rVal << 2) | cVal;
+            else if (numVars === 3) minterm = (rVal << 2) | cVal;
+            else minterm = (rVal << 1) | cVal;
             container.innerHTML += `<div class="kmap-cell state-0" id="cell-${minterm}" onclick="toggleCell(${minterm})">0</div>`;
         });
     });
 }
 
+/* RECUPERADA EM 100%: FAZ OS QUADRADOS DO MAPA ENTRAR EM LOOP AO TOQUE */
+function toggleCell(idx) { 
+    kmapData[idx] = (kmapData[idx] + 1) % 3; 
+    const el = document.getElementById(`cell-${idx}`); 
+    if (el) {
+        if (kmapData[idx] === 1) {
+            el.className = 'kmap-cell state-1';
+            el.innerText = '1';
+        } else if (kmapData[idx] === 2) {
+            el.className = 'kmap-cell state-x';
+            el.innerText = 'X';
+        } else {
+            el.className = 'kmap-cell state-0';
+            el.innerText = '0';
+        }
+    }
+}
+
+/* RECUPERADA EM 100%: ACENDE AS BORDAS DO MAPA K CONFORME O TERMO CLICADO */
 function highlightGroup(indices) {
-    document.querySelectorAll('.kmap-cell').forEach(c => c.classList.remove('educ-highlight'));
+    document.querySelectorAll('.kmap-cell').forEach(c => {
+        c.classList.remove('educ-highlight');
+    });
     if (!indices) return;
     indices.forEach(idx => {
         const cell = document.getElementById(`cell-${idx}`);
-        if (cell) cell.classList.add('educ-highlight');
+        if (cell) {
+            cell.classList.add('educ-highlight');
+        }
     });
 }
 
 function solveKMap() {
     const minterms = [], dontCares = [], maxM = 1 << currentVars;
-    for (let i = 0; i < maxM; i++) { if (kmapData[i] === 1) minterms.push(i); if (kmapData[i] === 2) dontCares.push(i); }
+    for (let i = 0; i < maxM; i++) {
+        if (kmapData[i] === 1) minterms.push(i);
+        if (kmapData[i] === 2) dontCares.push(i);
+    }
     
     const eqBox = document.getElementById('kmap-equation-text');
-    if (minterms.length === 0) { eqBox.innerText = "Y = 0"; lastCalculatedEquation = "0"; solutionGroups = []; return; }
-    if (minterms.length === maxM) { eqBox.innerText = "Y = 1"; lastCalculatedEquation = "1"; solutionGroups = [Array.from({length: maxM}, (_, i) => i)]; return; }
+    if (minterms.length === 0) {
+        eqBox.innerText = "Y = 0"; lastCalculatedEquation = "0"; solutionGroups = []; return;
+    }
+    if (minterms.length === maxM) {
+        eqBox.innerText = "Y = 1"; lastCalculatedEquation = "1"; solutionGroups = [Array.from({length: maxM}, (_, i) => i)]; return;
+    }
     
     const xorPattern = checkSemanticXor(minterms, currentVars);
     if (xorPattern) { 
@@ -367,7 +419,13 @@ function solveKMap() {
 
 function findAllRectangles(ones, dcs, vars) {
     const target = new Set([...ones, ...dcs]), groups = [], R = (vars === 4) ? 4 : 2, C = (vars === 2) ? 2 : 4;
-    const mapRC = (r, c) => { const rG = (vars===4)?gray4[r]:gray2[r], cG = (vars===2)?gray2[c]:gray4[c]; return (vars===4)?(rG<<2)|cG : (vars===3?(rG<<2)|cG:(rG<<1)|cG); };
+    const mapRC = (r, c) => {
+        const rG = (vars === 4) ? gray4[r] : gray2[r];
+        const cG = (vars === 2) ? gray2[c] : gray4[c];
+        if (vars === 4) return (rG << 2) | cG;
+        if (vars === 3) return (rG << 2) | cG;
+        return (rG << 1) | cG;
+    };
     const sizes = [16, 8, 4, 2, 1].filter(s => s <= (1 << vars)); 
     for (let size of sizes) {
         for (let h = 1; h <= size; h++) {
@@ -394,7 +452,10 @@ function findAllRectangles(ones, dcs, vars) {
 
 function filterPrimes(groups) {
     const unique = [], seen = new Set();
-    for (let g of groups) { const k = g.minterms.join(','); if (!seen.has(k)) { seen.add(k); unique.push(g); } }
+    for (let g of groups) {
+        const k = g.minterms.join(',');
+        if (!seen.has(k)) { seen.add(k); unique.push(g); }
+    }
     unique.sort((a, b) => b.size - a.size);
     const primes = [];
     for (let i = 0; i < unique.length; i++) {
@@ -433,9 +494,6 @@ function selectMinimalCover(primes, req) {
     } return sel;
 }
 
-/* ==========================================================================
-   FUNÇÕES RECUPERADAS: ENGENHARIA ANTI-FALHA DE BORDA DO MAPA K
-   ========================================================================== */
 function isGroupWrapping(minterms) {
     if (minterms.length < 2) return false;
     let min = Math.min(...minterms);
@@ -517,7 +575,7 @@ function sendCalculatedToTable() {
     document.querySelectorAll('.nav-btn')[1].click(); generateTruthTable();
 }
 
-// --- DESENHISTA VETORIAL DE DIAGRAMAS ---
+// --- ABA 4: DESENHISTA VETORIAL DE DIAGRAMAS INDEPENDENTES ---
 function sendToCircuit(s) {
     let e = (s === 'kmap') ? lastCalculatedEquation : document.getElementById('custom-expression').value;
     if (!e) e = "0"; if (e.startsWith("Y = ")) e = e.substring(4);
@@ -625,7 +683,7 @@ function drawGateSimple(ctx, type, x, y) {
         ctx.beginPath(); ctx.moveTo(x, y - 15); ctx.lineTo(x + 15, y - 15); ctx.arc(x + 15, y, 15, -Math.PI / 2, Math.PI / 2); ctx.lineTo(x, y + 15); ctx.lineTo(x, y - 15); ctx.fill(); ctx.stroke();
         if (type === 'NAND') { ctx.beginPath(); ctx.arc(x + 33, y, 3, 0, 2 * Math.PI); ctx.fill(); ctx.stroke(); }
     } else if (type === 'OR' || type === 'NOR') {
-        ctx.beginPath(); ctx.moveTo(x, y - 15); ctx.quadraticCurveTo(x + 15, y - 15, x + 30, y); ctx.quadraticCurveTo(x + 15, y+15, x, y + 15); ctx.quadraticCurveTo(x + 10, y, x, y - 15); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x, y - 15); ctx.quadraticCurveTo(x + 15, y - 15, x + 30, y); ctx.quadraticCurveTo(x + 15, y + 15, x, y + 15); ctx.quadraticCurveTo(x + 10, y, x, y - 15); ctx.fill(); ctx.stroke();
         if (type === 'NOR') { ctx.beginPath(); ctx.arc(x + 33, y, 3, 0, 2 * Math.PI); ctx.fill(); ctx.stroke(); }
     } else if (type === 'XOR' || type === 'XNOR') {
         ctx.beginPath(); ctx.moveTo(x - 5, y - 15); ctx.quadraticCurveTo(x + 5, y, x - 5, y + 15); ctx.stroke();
@@ -634,35 +692,24 @@ function drawGateSimple(ctx, type, x, y) {
     }
 }
 
-// --- RENDERIZADOR DE PINAGEM TTL ---
+// --- ABA 6: COMPILADOR DE PINAGEM TTL NATIVO ---
 function drawChip() {
-    const canvas = document.getElementById('chip-canvas'); 
-    if (!canvas) return;
-    canvas.style.width = '350px'; canvas.style.height = '300px'; 
-    const ctx = setupCanvas(canvas);
-    
+    const canvas = document.getElementById('chip-canvas'); if (!canvas) return;
+    canvas.style.width = '350px'; canvas.style.height = '300px'; const ctx = setupCanvas(canvas);
     ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = 10; ctx.shadowOffsetX = 5; ctx.shadowOffsetY = 5;
-    ctx.fillStyle = "#222"; ctx.fillRect(25, 50, 300, 200); 
-    ctx.shadowBlur = 0; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
-    
+    ctx.fillStyle = "#222"; ctx.fillRect(25, 50, 300, 200); ctx.shadowBlur = 0; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
     ctx.fillStyle = "#111"; ctx.beginPath(); ctx.arc(25, 150, 15, -Math.PI / 2, Math.PI / 2); ctx.fill();
     ctx.fillStyle = "#ddd"; ctx.font = "bold 24px Arial"; ctx.fillText(document.getElementById('chip-selector').value, 130, 155);
-    
     const pinMap = getPinout(document.getElementById('chip-selector').value).map;
     for (let i = 0; i < 7; i++) {
         const x = 55 + (i * 40); ctx.fillStyle = "#9ca3af"; ctx.fillRect(x, 250, 10, 30); ctx.fillRect(x, 20, 10, 30);
-        const pBot = pinMap.find(p => p.pin === i + 1); 
-        const pTop = pinMap.find(p => p.pin === 14 - i);
+        const pBot = pinMap.find(p => p.pin === i + 1); const pTop = pinMap.find(p => p.pin === 14 - i);
         ctx.font = "bold 11px Arial";
         if (pBot) { ctx.fillStyle = getColor(pBot.type); ctx.fillText(pBot.lbl, x - 2, 245); }
         if (pTop) { ctx.fillStyle = getColor(pTop.type); ctx.fillText(pTop.lbl, x - 2, 65); }
     }
 }
-
-function getColor(type) { 
-    return type === 'VCC' ? '#ef4444' : type === 'GND' ? '#000' : type === 'OUT' ? '#fbbf24' : '#4ade80'; 
-}
-
+function getColor(type) { return type === 'VCC' ? '#ef4444' : type === 'GND' ? '#000' : type === 'OUT' ? '#fbbf24' : '#4ade80'; }
 function getPinout(type) {
     const vcc = {pin: 14, type: 'VCC', lbl: 'VCC'}, gnd = {pin: 7, type: 'GND', lbl: 'GND'};
     if (type === '7402') return { map: [ {pin: 1, type: 'OUT', lbl: '1Y'}, {pin: 2, type: 'IN', lbl: '1A'}, {pin: 3, type: 'IN', lbl: '1B'}, {pin: 4, type: 'OUT', lbl: '2Y'}, {pin: 5, type: 'IN', lbl: '2A'}, {pin: 6, type: 'IN', lbl: '2B'}, gnd, {pin: 8, type: 'IN', lbl: '3A'}, {pin: 9, type: 'IN', lbl: '3B'}, {pin: 10, type: 'OUT', lbl: '3Y'}, {pin: 11, type: 'IN', lbl: '4A'}, {pin: 12, type: 'IN', lbl: '4B'}, {pin: 13, type: 'OUT', lbl: '4Y'}, vcc ]};
@@ -670,48 +717,6 @@ function getPinout(type) {
     return { map: [ {pin: 1, type: 'IN', lbl: '1A'}, {pin: 2, type: 'IN', lbl: '1B'}, {pin: 3, type: 'OUT', lbl: '1Y'}, {pin: 4, type: 'IN', lbl: '2A'}, {pin: 5, type: 'IN', lbl: '2B'}, {pin: 6, type: 'OUT', lbl: '2Y'}, gnd, {pin: 8, type: 'OUT', lbl: '3Y'}, {pin: 9, type: 'IN', lbl: '3A'}, {pin: 10, type: 'IN', lbl: '3B'}, {pin: 11, type: 'OUT', lbl: '4Y'}, {pin: 12, type: 'IN', lbl: '4A'}, {pin: 13, type: 'IN', lbl: '4B'}, vcc ]};
 }
 
-// --- EXPORTAÇÃO DE MATRIZES ---
-function exportCircuitImage() {
-    const canvas = document.getElementById('circuit-canvas');
-    const dataUrl = canvas.toDataURL("image/png");
-    showImageModal(dataUrl);
-}
-
-function exportTableImage() {
-    const table = document.getElementById("truth-table-display");
-    if (!table.rows.length) return;
-
-    const rowHeight = 40, colWidth = 60, padding = 20;
-    const width = (table.rows[0].cells.length * colWidth) + (padding * 2);
-    const height = (table.rows.length * rowHeight) + (padding * 2);
-
-    const canvas = document.createElement("canvas");
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = width * dpr; canvas.height = height * dpr;
-    const ctx = canvas.getContext("2d"); ctx.scale(dpr, dpr);
-
-    ctx.fillStyle = "#020617"; ctx.fillRect(0, 0, width, height);
-    ctx.font = "bold 16px Courier New"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.lineWidth = 1;
-
-    for (let i = 0; i < table.rows.length; i++) {
-        const row = table.rows[i]; const y = padding + (i * rowHeight) + (rowHeight / 2);
-        ctx.beginPath(); ctx.moveTo(padding, padding + (i * rowHeight)); ctx.lineTo(width - padding, padding + (i * rowHeight));
-        ctx.strokeStyle = (i === 0 || i === 1) ? "#3b82f6" : "#1e293b"; ctx.stroke();
-
-        for (let j = 0; j < row.cells.length; j++) {
-            const cell = row.cells[j]; const x = padding + (j * colWidth) + (colWidth / 2);
-            let color = "#94a3b8";
-            if (i === 0) color = "#f59e0b";
-            else {
-                if (cell.classList.contains("result-1")) color = "#00ff9d";
-                else if (cell.classList.contains("result-0")) color = "#ff3366";
-            }
-            ctx.fillStyle = color; ctx.fillText(cell.innerText, x, y);
-        }
-    }
-    ctx.strokeStyle = "#334155"; ctx.strokeRect(padding, padding, width - (padding * 2), height - (padding * 2));
-    showImageModal(canvas.toDataURL("image/png"));
-}
-
-// Execuções Iniciais Obrigatórias
+// --- DISPARO DE MOLDURA INICIAL ---
 updateGateLogic(); generateTruthTable(); initKMapGrid();
+
