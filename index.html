@@ -202,7 +202,7 @@
             color: var(--text-muted);
             font-weight: 500;
         }
-        select, input[type="text"], input[type="number"] {
+        select, input[type="text"], input[type="number"], input[type="email"] {
             width: 100%;
             padding: 14px;
             background-color: var(--bg);
@@ -941,21 +941,27 @@
         </div>
     </div>
 
-    <!-- INTERFACE DO MODAL DO VOLT IA -->
+    <!-- MODAL INTERATIVO DO VOLT IA ATUALIZADO -->
     <div id="support-modal" class="modal">
-        <div class="modal-content" style="max-width: 440px; height: auto; min-height: 340px; padding: 22px; border-radius: 16px; border-color: var(--primary);">
+        <div class="modal-content" style="max-width: 440px; height: auto; min-height: 380px; padding: 22px; border-radius: 16px; border-color: var(--primary);">
             <span class="close-modal" onclick="closeSupportModal()">&times;</span>
             
             <div id="support-header" style="width:100%; text-align:left; border-bottom: 1px solid var(--border); padding-bottom:10px; margin-bottom:15px;">
                 <span style="color:var(--primary); font-weight:bold; font-size:1.2rem;">⚡ Volt IA - Triagem</span>
             </div>
 
-            <!-- Fase 1: Entrada de texto libre -->
+            <!-- Fase 1: Entrada de Dados e Mensagem -->
             <div id="support-step-1" style="width:100%;">
                 <p id="volt-bubble" style="color:var(--text-muted); font-size:0.95rem; margin-bottom:15px; line-height:1.5; background: rgba(255,255,255,0.02); padding: 12px; border-radius: 12px; border: 1px solid var(--border);">
-                    Olá! Eu sou o <strong>Volt</strong>. Qual problema ou bug você encontrou no EletroNIC? Descreva com detalhes para que eu possa ajudar.
+                    Olá! Eu sou o <strong>Volt</strong>. Identifiquei que você precisa de suporte. Por favor, informe seu e-mail e descreva o bug encontrado detalhadamente.
                 </p>
-                <textarea id="support-message" placeholder="Ex: O botão de gerar circuito não funciona..." style="width:100%; height:90px; padding:12px; background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:12px; resize:none; font-family:inherit;"></textarea>
+                
+                <!-- Novo Campo: E-mail de Retorno -->
+                <input type="email" id="support-user-email" placeholder="Seu melhor e-mail para darmos o retorno..." style="width:100%; padding:12px; background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:12px; margin-bottom:12px; font-size:0.95rem;">
+                
+                <!-- Campo de Mensagem -->
+                <textarea id="support-message" placeholder="Descreva aqui o problema enfrentado no app..." style="width:100%; height:90px; padding:12px; background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:12px; resize:none; font-family:inherit; font-size:0.95rem;"></textarea>
+                
                 <div id="volt-inline-error" style="color: var(--danger); font-size: 0.85rem; margin-top: 5px; display: none;"></div>
                 <button class="btn" style="margin-top:12px;" onclick="sendSupportTicket()">Enviar para Suporte</button>
             </div>
@@ -971,7 +977,7 @@
                 <div style="color:var(--success); font-size:3rem; margin-bottom:10px;">✓</div>
                 <h3 style="color:var(--text); margin-bottom:5px;">Chamado Registrado!</h3>
                 <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:12px;">Seu número do ticket de atendimento:</p>
-                <div id="ticket-display" style="font-family:'Courier New', monospace; font-size:2rem; color:var(--accent); font-weight:bold; background:var(--bg); padding:10px; border-radius:8px; border:1px solid var(--border); display:inline-block; letter-spacing:2px; margin-bottom:15px;">#0000</div>
+                <div id="ticket-display" style="font-family:'Courier New', monospace; font-size:1.8rem; color:var(--accent); font-weight:bold; background:var(--bg); padding:10px; border-radius:8px; border:1px solid var(--border); display:inline-block; letter-spacing:1px; margin-bottom:15px;">#0000</div>
                 <p style="color:var(--text-muted); font-size:0.8rem; line-height:1.4;">
                     Os detalhes caíram na caixa de <strong>kmzsuportt1@gmail.com</strong>. Fique de olho no seu e-mail!
                 </p>
@@ -1038,6 +1044,7 @@
             document.getElementById('support-step-2').classList.add('hidden');
             document.getElementById('support-step-3').classList.add('hidden');
             document.getElementById('support-message').value = "";
+            document.getElementById('support-user-email').value = "";
             document.getElementById('volt-inline-error').style.display = 'none';
             document.getElementById('volt-bubble').innerHTML = "Olá! Eu sou o <strong>Volt</strong>. Qual problema ou bug você encontrou no EletroNIC? Descreva com detalhes para que eu possa ajudar.";
             
@@ -1045,22 +1052,35 @@
         }
 
         function closeSupportModal() {
-            document.getElementById('support-modal').classList.remove('visible');
+            document.getElementById('support-modal').github-light.classList.remove('visible');
         }
 
         function sendSupportTicket() {
+            const emailInput = document.getElementById('support-user-email');
             const msgInput = document.getElementById('support-message');
+            
+            const userEmail = emailInput.value.trim();
             const txt = msgInput.value.trim().toLowerCase();
             const errDiv = document.getElementById('volt-inline-error');
             
             errDiv.style.display = 'none';
 
+            // Validação 1: Validando o preenchimento e formato correto de e-mail
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if(!userEmail || !emailRegex.test(userEmail)) {
+                errDiv.innerText = "⚠️ Por favor, insira um endereço de e-mail válido para darmos retorno.";
+                errDiv.style.display = 'block';
+                return;
+            }
+
+            // Validação 2: Tamanho da descrição
             if(txt.length < 12) {
                 errDiv.innerText = "⚠️ O Volt precisa de mais detalhes! Descreva melhor o erro.";
                 errDiv.style.display = 'block';
                 return;
             }
 
+            // Análise Básica por palavras-chave
             if(txt.includes("circuito") || txt.includes("desenho") || txt.includes("canvas")) {
                 document.getElementById('volt-bubble').innerHTML = "⚡ <strong>Dica do Volt:</strong> Notei que seu problema envolve o Diagrama Lógico. Lembre-se que você pode usar o botão 'Visualizar p/ Print' para expandir o gráfico perfeitamente!";
             } else if(txt.includes("calculadora") || txt.includes("conversor") || txt.includes("base")) {
@@ -1070,17 +1090,25 @@
             document.getElementById('support-step-1').classList.add('hidden');
             document.getElementById('support-step-2').classList.remove('hidden');
 
-            const generatedTicket = Math.floor(1000 + Math.random() * 9000);
+            // SOLUÇÃO ANTI-REPETIÇÃO: Gera um token alfanumérico único de 6 caracteres (Ex: KM942X)
+            const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            let generatedTicket = "KM-";
+            for (let i = 0; i < 6; i++) {
+                generatedTicket += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+
+            // Organizamos para injetar o e-mail coletado direto no topo do corpo da mensagem
+            const fullMessageWithEmail = "Remetente: " + userEmail + "\n\nRelato do Problema:\n" + msgInput.value.trim();
 
             const templateParams = {
-                ticket_id: "#" + generatedTicket,
-                user_message: msgInput.value.trim(),
+                ticket_id: generatedTicket,
+                user_message: fullMessageWithEmail,
                 app_version: "1.0 (Cordova Release 2026)"
             };
 
             emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams)
                 .then(function() {
-                    document.getElementById('ticket-display').innerText = "#" + generatedTicket;
+                    document.getElementById('ticket-display').innerText = generatedTicket;
                     document.getElementById('support-step-2').classList.add('hidden');
                     document.getElementById('support-step-3').classList.remove('hidden');
                 }, function(error) {
@@ -1718,7 +1746,7 @@
         function getPinout(type) {
             const vcc={pin:14,type:'VCC',lbl:'VCC'}, gnd={pin:7,type:'GND',lbl:'GND'};
             if(type==='7402') { return { map: [ {pin:1,type:'OUT',lbl:'1Y'}, {pin:2,type:'IN',lbl:'1A'}, {pin:3,type:'IN',lbl:'1B'}, {pin:4,type:'OUT',lbl:'2Y'}, {pin:5,type:'IN',lbl:'2A'}, {pin:6,type:'IN',lbl:'2B'}, gnd, {pin:8,type:'IN',lbl:'3A'}, {pin:9,type:'IN',lbl:'3B'}, {pin:10,type:'OUT',lbl:'3Y'}, {pin:11,type:'IN',lbl:'4A'}, {pin:12,type:'IN',lbl:'4B'}, {pin:13,type:'OUT',lbl:'4Y'}, vcc ]}; }
-            if(type==='7404') { return { map: [ {pin:1,type:'IN',lbl:'1A'}, {pin:2,type:'OUT',lbl:'1Y'}, {pin:3,type:'IN',2:'A'}, {pin:4,type:'OUT',lbl:'2Y'}, {pin:5,type:'IN',lbl:'3A'}, {pin:6,type:'OUT',lbl:'3Y'}, gnd, {pin:8,type:'OUT',lbl:'4Y'}, {pin:9,type:'IN',lbl:'4A'}, {pin:10,type:'OUT',lbl:'5Y'}, {pin:11,type:'IN',lbl:'5A'}, {pin:12,type:'OUT',lbl:'6Y'}, {pin:13,type:'IN',lbl:'6A'}, vcc ]}; }
+            if(type==='7404') { return { map: [ {pin:1,type:'IN',lbl:'1A'}, {pin:2,type:'OUT',lbl:'1Y'}, {pin:3,type:'IN',lbl:'2A'}, {pin:4,type:'OUT',lbl:'2Y'}, {pin:5,type:'IN',lbl:'3A'}, {pin:6,type:'OUT',lbl:'3Y'}, gnd, {pin:8,type:'OUT',lbl:'4Y'}, {pin:9,type:'IN',lbl:'4A'}, {pin:10,type:'OUT',lbl:'5Y'}, {pin:11,type:'IN',lbl:'5A'}, {pin:12,type:'OUT',lbl:'6Y'}, {pin:13,type:'IN',lbl:'6A'}, vcc ]}; }
             return { map: [ {pin:1,type:'IN',lbl:'1A'}, {pin:2,type:'IN',lbl:'1B'}, {pin:3,type:'OUT',lbl:'1Y'}, {pin:4,type:'IN',lbl:'2A'}, {pin:5,type:'IN',lbl:'2B'}, {pin:6,type:'OUT',lbl:'2Y'}, gnd, {pin:8,type:'OUT',lbl:'3Y'}, {pin:9,type:'IN',lbl:'3A'}, {pin:10,type:'IN',lbl:'3B'}, {pin:11,type:'OUT',lbl:'4Y'}, {pin:12,type:'IN',lbl:'4A'}, {pin:13,type:'IN',lbl:'4B'}, vcc ]};
         }
 
