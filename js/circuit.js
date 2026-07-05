@@ -6,10 +6,41 @@ function sendToCircuit(s) {
     document.querySelectorAll('.nav-btn')[3].click(); setTimeout(()=>drawCircuit(e), 100);
 }
 
+// Função auxiliar interna para normalizar a string de entrada eliminando as aspas residuais de forma segura
+function normalizeCircuitExpression(expr) {
+    let clean = expr.toUpperCase().replace(/\s+/g, '');
+    while (clean.includes("'")) {
+        const idx = clean.indexOf("'");
+        if (idx > 0) {
+            let start = idx - 1;
+            if (clean[start] === ')') {
+                let depth = 1; start--;
+                while (start >= 0 && depth > 0) {
+                    if (clean[start] === ')') depth++;
+                    else if (clean[start] === '(') depth--;
+                    start--;
+                }
+                start++;
+                clean = clean.substring(0, start) + '!(' + clean.substring(start, idx) + ')' + clean.substring(idx + 1);
+            } else if (/[A-D0-1]/.test(clean[start])) {
+                clean = clean.substring(0, start) + '!' + clean[start] + clean.substring(idx + 1);
+            } else {
+                clean = clean.replace("'", "");
+            }
+        } else {
+            clean = clean.replace("'", "");
+        }
+    }
+    return clean;
+}
+
 function drawCircuit(expr) {
     const canvas = document.getElementById('circuit-canvas');
     canvas.style.width = '100%'; canvas.style.height = '100%';
-    let clean = expr.replace(/\s/g, '');
+    
+    // Normaliza a expressão antes de dividir em termos
+    let clean = normalizeCircuitExpression(expr);
+    
     if(clean==='0'||clean==='1') { 
         const ctx = setupCanvas(canvas); ctx.clearRect(0,0,canvas.width,canvas.height);
         ctx.font="bold 20px Arial"; ctx.fillStyle="#333"; ctx.fillText("Saída Constante: "+clean,50,50); return; 
@@ -45,12 +76,22 @@ function drawCircuit(expr) {
         
         if(term.includes('\u2295')) { 
             gateType = 'XOR';
-            term.split('\u2295').forEach(p => { const m = p.match(/([A-D])('?)/); if(m) lits.push({c:m[1], n:m[2]==="'"}); });
+            term.split('\u2295').forEach(p => { const m = p.match(/([A-D])/); if(m) lits.push({c:m[1], n:p.includes('!')}); });
         } else if(term.includes('\u2299')) {
             gateType = 'XNOR';
-            term.split('\u2299').forEach(p => { const m = p.match(/([A-D])('?)/); if(m) lits.push({c:m[1], n:m[2]==="'"}); });
+            term.split('\u2299').forEach(p => { const m = p.match(/([A-D])/); if(m) lits.push({c:m[1], n:p.includes('!')}); });
         } else {
-             const m = term.matchAll(/([A-D])('?)/g); for(const i of m) lits.push({c:i[1], n:i[2]==="'"});
+            // Mapeamento baseado no caractere de negação formalizado "!"
+            ['A','B','C','D'].forEach(v => {
+                if (term.includes(v)) {
+                    let isNegated = false;
+                    let vIdx = term.indexOf(v);
+                    if (vIdx > 0 && term[vIdx - 1] === '!') isNegated = true;
+                    lits.push({ c: v, n: isNegated });
+                }
+            });
+            // Reordena os literais baseados no barramento para o desenho não cruzar linhas à toa
+            lits.sort((x, y) => railX[x.c] - railX[y.c]);
         }
         if(lits.length === 0) return;
         let curX = startGateX;
@@ -58,12 +99,10 @@ function drawCircuit(expr) {
         if (lits.length === 1 && !term.includes('\u2295') && !term.includes('\u2299')) {
             let lit = lits[0];
             if (lit.n) {
-                // CORREÇÃO: Se a única variável for negada, desenha explicitamente a porta NOT gráfica
                 drawWire(ctx, railX[lit.c], currentY, curX, currentY, false);
                 drawGateSimple(ctx, 'NOT', curX, currentY);
                 termOutputs.push({x: curX + 20, y: currentY});
             } else {
-                // Se for direta (ex: apenas "A"), mantém apenas a linha direta até o estágio final
                 drawWire(ctx, railX[lit.c], currentY, curX, currentY, false);
                 termOutputs.push({x: curX, y: currentY});
             }
@@ -129,14 +168,7 @@ function drawGateSimple(ctx, type, x, y) {
         ctx.beginPath(); ctx.moveTo(x, y-15); ctx.quadraticCurveTo(x+15, y-15, x+30, y); ctx.quadraticCurveTo(x+15, y+15, x, y+15); ctx.quadraticCurveTo(x+10, y, x, y-15); ctx.fill(); ctx.stroke();
         if(type === 'XNOR') { ctx.beginPath(); ctx.arc(x+33, y, 3, 0, 2*Math.PI); ctx.fill(); ctx.stroke(); }
     } else if (type === 'NOT') {
-        // Bloco geométrico do triângulo inversor clássico (NOT)
-        ctx.beginPath();
-        ctx.moveTo(x, y - 12);
-        ctx.lineTo(x + 15, y);
-        ctx.lineTo(x, y + 12);
-        ctx.closePath();
-        ctx.fill(); ctx.stroke();
-        // Círculo de inversão na ponta do triângulo
+        ctx.beginPath(); ctx.moveTo(x, y - 12); ctx.lineTo(x + 15, y); ctx.lineTo(x, y + 12); ctx.closePath(); ctx.fill(); ctx.stroke();
         ctx.beginPath(); ctx.arc(x + 18, y, 3, 0, 2 * Math.PI); ctx.fill(); ctx.stroke();
     }
 }
