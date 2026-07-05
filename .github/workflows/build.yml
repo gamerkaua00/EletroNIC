@@ -63,19 +63,28 @@ jobs:
             echo "⚠️ Arquivo CSS não encontrado, pulando minificação local..."
           fi
           
-          echo "Minificando e copiando lógica de controle (JS)..."
+          echo "Processando e protegendo lógica de controle (JS)..."
           if [ -d "js" ]; then
             for f in js/*.js; do
               if [ -f "$f" ]; then
                 filename=$(basename "$f")
-                html-minifier-terser --minify-js true -o "app/www/js/$filename" "$f"
+                # Cria um envelope temporário de script para o html-minifier-terser processar o JS sem quebrar nos operadores lógicos
+                echo "<script>" > temp_js.html
+                cat "$f" >> temp_js.html
+                echo "</script>" >> temp_js.html
+                
+                html-minifier-terser --minify-js true temp_js.html -o temp_js_min.html
+                
+                # Extrai de volta apenas o código JS estritamente minificado e limpo
+                sed 's/<script>//g;s/<\/script>//g' temp_js_min.html > "app/www/js/$filename"
+                rm -f temp_js.html temp_js_min.html
               fi
             done
           else
-            echo "⚠️ Pasta /js não encontrada, verificando arquivos soltos..."
+            echo "⚠️ Pasta /js não encontrada, copiando arquivos da raiz..."
             for f in *.js; do
               if [ -f "$f" ]; then
-                html-minifier-terser --minify-js true -o "app/www/js/$f" "$f"
+                cp "$f" "app/www/js/$f"
               fi
             done
           fi
