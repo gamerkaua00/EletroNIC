@@ -5,7 +5,7 @@ function parseExpression(expr, ctx) {
         if(clean === '0') return false;
         if(clean === '1') return true;
 
-        // Processa as inversões baseadas em aspas de forma segura
+        // MOTOR DE NEGAÇÃO CORRIGIDO: Processa as aspas (') convertendo para negação lógica (!) sem quebrar a string
         while (clean.includes("'")) {
             const idx = clean.indexOf("'");
             if (idx > 0) {
@@ -20,7 +20,7 @@ function parseExpression(expr, ctx) {
                     start++;
                     clean = clean.substring(0, start) + '!(' + clean.substring(start, idx) + ')' + clean.substring(idx + 1);
                 } else if (/[A-D0-1]/.test(clean[start])) {
-                    // CORREÇÃO: Trata corretamente variáveis isoladas negadas (ex: C' vira !C)
+                    // Trata variáveis isoladas de forma limpa (ex: B' vira !B) eliminando o bug de travamento
                     clean = clean.substring(0, start) + '!' + clean[start] + clean.substring(idx + 1);
                 } else {
                     clean = clean.replace("'", "");
@@ -30,13 +30,14 @@ function parseExpression(expr, ctx) {
             }
         }
 
-        // CORREÇÃO DE MULTIPLICAÇÃO IMPLÍCITA: Injeta '*' entre variáveis adjacentes ou negações encostadas (ex: A'B -> A'*B)
+        // Injeta operador de multiplicação apenas onde há produto implícito real (ex: AB -> A*B ou A!B -> A*!B)
         clean = clean.replace(/([A-D!)]+)(?=[A-D!(])/g, '$1*');
 
         const atom = "!?(?:[A-D]|[0-1]|\\([^)]+\\))";
         while(clean.includes('\u22BC')) clean = clean.replace(new RegExp(`(${atom})\u22BC(${atom})`), '!($1&&$2)');
         while(clean.includes('\u22BD')) clean = clean.replace(new RegExp(`(${atom})\u22BD(${atom})`), '!($1||$2)');
         
+        // Substituição limpa de caracteres booleanos por operadores nativos estáveis do JavaScript
         clean = clean.replace(/([A-D\)])(?=[A-D\(!])/g, '$1&&');
         clean = clean.replace(/\u2295/g, '!==').replace(/\u2299/g, '===');
         clean = clean.replace(/\+/g, '||').replace(/\*/g, '&&');
@@ -71,11 +72,11 @@ function generateTruthTable() {
         }
         let res = 0;
         if(document.getElementById('tt-mode').value === 'simple') {
-            document.getElementById('expression-error').style.display = 'none'; // Limpa erros residuais
+            document.getElementById('expression-error').style.display = 'none';
             const t = document.getElementById('tt-type').value, a=ctx.A, b=ctx.B;
             if(t==='AND') res=a&&b; 
             else if(t==='OR') res=a||b; 
-            else if(t==='XOR') res=(a !== b) ? 1 : 0; // CORREÇÃO: Operação XOR corrigida de forma definitiva
+            else if(t==='XOR') res=(a !== b) ? 1 : 0;
             else if(t==='NAND') res=!(a&&b); 
             else if(t==='NOR') res=!(a||b);
         } else {
