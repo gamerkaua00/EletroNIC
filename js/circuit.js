@@ -6,9 +6,11 @@ function sendToCircuit(s) {
     document.querySelectorAll('.nav-btn')[3].click(); setTimeout(()=>drawCircuit(e), 100);
 }
 
-// Função auxiliar interna para normalizar a string de entrada eliminando as aspas residuais de forma segura
+// FAXINA GERAL DE STRINGS: Normaliza os tokens de negação e limpa parênteses espúrios ao redor de variáveis soltas
 function normalizeCircuitExpression(expr) {
     let clean = expr.toUpperCase().replace(/\s+/g, '');
+    
+    // Converte e unifica a lógica de aspas simples (') em inversor formal (!)
     while (clean.includes("'")) {
         const idx = clean.indexOf("'");
         if (idx > 0) {
@@ -21,7 +23,14 @@ function normalizeCircuitExpression(expr) {
                     start--;
                 }
                 start++;
-                clean = clean.substring(0, start) + '!(' + clean.substring(start, idx) + ')' + clean.substring(idx + 1);
+                
+                let inner = clean.substring(start + 1, idx - 1);
+                // Evita o travamento limpando cascas de parênteses inúteis (ex: (A)' vira !A)
+                if (inner.length === 1 && /[A-D]/.test(inner)) {
+                    clean = clean.substring(0, start) + '!' + inner + clean.substring(idx + 1);
+                } else {
+                    clean = clean.substring(0, start) + '!(' + inner + ')' + clean.substring(idx + 1);
+                }
             } else if (/[A-D0-1]/.test(clean[start])) {
                 clean = clean.substring(0, start) + '!' + clean[start] + clean.substring(idx + 1);
             } else {
@@ -31,6 +40,9 @@ function normalizeCircuitExpression(expr) {
             clean = clean.replace("'", "");
         }
     }
+    
+    // Varre e remove invólucros como !(A), !(B) que o KMap gera e converte para !A, !B
+    clean = clean.replace(/!\(([A-D])\)/g, '!$1');
     return clean;
 }
 
@@ -38,13 +50,14 @@ function drawCircuit(expr) {
     const canvas = document.getElementById('circuit-canvas');
     canvas.style.width = '100%'; canvas.style.height = '100%';
     
-    // Normaliza a expressão antes de dividir em termos
+    // Executa a higienização de strings para todas as combinações
     let clean = normalizeCircuitExpression(expr);
     
     if(clean==='0'||clean==='1') { 
         const ctx = setupCanvas(canvas); ctx.clearRect(0,0,canvas.width,canvas.height);
         ctx.font="bold 20px Arial"; ctx.fillStyle="#333"; ctx.fillText("Saída Constante: "+clean,50,50); return; 
     }
+    
     let terms = []; let lvl = 0, buff = "";
     for(let char of clean) { 
         if(char==='(') lvl++; else if(char===')') lvl--; 
@@ -72,15 +85,26 @@ function drawCircuit(expr) {
     const termOutputs = []; let currentY = 50;
     terms.forEach(term => {
         let lits = [];
-        let gateType = term.includes('+') ? 'OR' : 'AND';
         
-        if(term.includes('\u2295')) { 
-            gateType = 'XOR';
+        // IDENTIFICAÇÃO DE PORTAS DE TODAS AS CATEGORIAS (Simples e Complexas)
+        let gateType = 'AND';
+        if (term.includes('+')) gateType = 'OR';
+        if (term.includes('\u22BC')) gateType = 'NAND';
+        if (term.includes('\u22BD')) gateType = 'NOR';
+        if (term.includes('\u2295')) gateType = 'XOR';
+        if (term.includes('\u2299')) gateType = 'XNOR';
+        
+        // Varre de forma explícita as constantes dos caracteres lógicos complexos
+        if(gateType === 'XOR') {
             term.split('\u2295').forEach(p => { const m = p.match(/([A-D])/); if(m) lits.push({c:m[1], n:p.includes('!')}); });
-        } else if(term.includes('\u2299')) {
-            gateType = 'XNOR';
+        } else if(gateType === 'XNOR') {
             term.split('\u2299').forEach(p => { const m = p.match(/([A-D])/); if(m) lits.push({c:m[1], n:p.includes('!')}); });
+        } else if(gateType === 'NAND') {
+            term.split('\u22BC').forEach(p => { const m = p.match(/([A-D])/); if(m) lits.push({c:m[1], n:p.includes('!')}); });
+        } else if(gateType === 'NOR') {
+            term.split('\u22BD').forEach(p => { const m = p.match(/([A-D])/); if(m) lits.push({c:m[1], n:p.includes('!')}); });
         } else {
+            // Mapeamento dinâmico para os barramentos estruturados A, B, C e D
             ['A','B','C','D'].forEach(v => {
                 if (term.includes(v)) {
                     let isNegated = false;
@@ -89,15 +113,17 @@ function drawCircuit(expr) {
                     lits.push({ c: v, n: isNegated });
                 }
             });
+            // Ordenação dos pinos para evitar cruzamento de barramentos no Canvas
             lits.sort((x, y) => railX[x.c] - railX[y.c]);
         }
+        
         if(lits.length === 0) return;
         let curX = startGateX;
         
-        if (lits.length === 1 && !term.includes('\u2295') && !term.includes('\u2299')) {
+        // BLINDAGEM COMPLETA DE VARIÁVEL ÚNICA: Se houver só um termo e for negado, desenha a NOT
+        if (lits.length === 1 && gateType === 'AND') {
             let lit = lits[0];
             if (lit.n) {
-                // CORREÇÃO MESTRE: Força o desenho da porta NOT mesmo se for a única variável da expressão inteira
                 drawWire(ctx, railX[lit.c], currentY, curX, currentY, false);
                 drawGateSimple(ctx, 'NOT', curX, currentY);
                 termOutputs.push({x: curX + 20, y: currentY});
@@ -154,6 +180,7 @@ function drawOrthogonalWire(ctx, x1, y1, x2, y2) {
     let midX = (x1 + x2) / 2; ctx.lineTo(midX, y1); ctx.lineTo(midX, y2); ctx.lineTo(x2, y2); ctx.stroke();
 }
 
+// ARQUITETURA GEOMÉTRICA DAS PORTAS: Garante os formatos industriais corretos e círculos de negação
 function drawGateSimple(ctx, type, x, y) {
     ctx.fillStyle = '#fff'; ctx.strokeStyle = '#000'; ctx.lineWidth = 2;
     if (type === 'AND' || type === 'NAND') {
