@@ -5,7 +5,7 @@ function parseExpression(expr, ctx) {
         if(clean === '0') return false;
         if(clean === '1') return true;
 
-        // MOTOR DE NEGAÇÃO CORRIGIDO: Processa as aspas (') convertendo para negação lógica (!) sem quebrar a string
+        // 1. MOTOR DE NEGAÇÃO CORRIGIDO: Transforma B' em (!B) e (A+B)' em !(A+B) de forma isolada e segura
         while (clean.includes("'")) {
             const idx = clean.indexOf("'");
             if (idx > 0) {
@@ -20,8 +20,8 @@ function parseExpression(expr, ctx) {
                     start++;
                     clean = clean.substring(0, start) + '!(' + clean.substring(start, idx) + ')' + clean.substring(idx + 1);
                 } else if (/[A-D0-1]/.test(clean[start])) {
-                    // Trata variáveis isoladas de forma limpa (ex: B' vira !B) eliminando o bug de travamento
-                    clean = clean.substring(0, start) + '!' + clean[start] + clean.substring(idx + 1);
+                    // Coloca entre parênteses para proteger o token do injetor de AND implícito
+                    clean = clean.substring(0, start) + '(!' + clean[start] + ')' + clean.substring(idx + 1);
                 } else {
                     clean = clean.replace("'", "");
                 }
@@ -30,15 +30,14 @@ function parseExpression(expr, ctx) {
             }
         }
 
-        // Injeta operador de multiplicação apenas onde há produto implícito real (ex: AB -> A*B ou A!B -> A*!B)
-        clean = clean.replace(/([A-D!)]+)(?=[A-D!(])/g, '$1*');
+        // 2. INJETOR DE MULTIPLICAÇÃO SEGURO: Só injeta '*' entre variáveis ou parênteses encostados (ex: AB -> A*B, (A)(B) -> (A)*(B))
+        clean = clean.replace(/([A-D)])(?=[A-D(])/g, '$1*');
 
         const atom = "!?(?:[A-D]|[0-1]|\\([^)]+\\))";
         while(clean.includes('\u22BC')) clean = clean.replace(new RegExp(`(${atom})\u22BC(${atom})`), '!($1&&$2)');
         while(clean.includes('\u22BD')) clean = clean.replace(new RegExp(`(${atom})\u22BD(${atom})`), '!($1||$2)');
         
-        // Substituição limpa de caracteres booleanos por operadores nativos estáveis do JavaScript
-        clean = clean.replace(/([A-D\)])(?=[A-D\(!])/g, '$1&&');
+        // 3. Traduz os operadores do app para os operadores nativos estáveis do JavaScript
         clean = clean.replace(/\u2295/g, '!==').replace(/\u2299/g, '===');
         clean = clean.replace(/\+/g, '||').replace(/\*/g, '&&');
         
