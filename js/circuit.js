@@ -1,4 +1,4 @@
-// --- DRAWING ENGINE REVISADO ---
+// --- DRAWING ENGINE (TURBINADO ANTI-SOBREPOSIÇÃO) ---
 function sendToCircuit(s) {
     let e = (s === 'kmap') ? lastCalculatedEquation : document.getElementById('custom-expression').value;
     if(!e) e = "0"; if(e.startsWith("Y = ")) e = e.substring(4);
@@ -8,9 +8,12 @@ function sendToCircuit(s) {
 
 function normalizeCircuitExpression(expr) {
     let clean = expr.toUpperCase().replace(/\s+/g, '');
+    
+    // Limpeza de parênteses soltos do KMap
     clean = clean.replace(/\(([A-D])\)'/g, "$1'");
     clean = clean.replace(/\(([A-D])\)/g, "$1");
     
+    // Padronização da inversão
     while (clean.includes("'")) {
         const idx = clean.indexOf("'");
         if (idx > 0) {
@@ -38,52 +41,10 @@ function normalizeCircuitExpression(expr) {
             clean = clean.replace("'", "");
         }
     }
+    
     clean = clean.replace(/([A-D!)]+)(?=[A-D!(])/g, '$1*');
     clean = clean.replace(/!\(([A-D])\)/g, '!$1');
     return clean;
-}
-
-function parseToTree(expr) {
-    let clean = expr.trim();
-    while (clean.startsWith('(') && clean.endsWith(')')) {
-        let lvl = 0, match = true;
-        for (let i = 0; i < clean.length - 1; i++) {
-            if (clean[i] === '(') lvl++;
-            else if (clean[i] === ')') lvl--;
-            if (lvl === 0 && i > 0) { match = false; break; }
-        }
-        if (match) clean = clean.substring(1, clean.length - 1).trim();
-        else break;
-    }
-
-    const findTopOperator = (str, opTokens) => {
-        let lvl = 0;
-        for (let i = str.length - 1; i >= 0; i--) {
-            if (str[i] === ')') lvl++;
-            else if (str[i] === '(') lvl--;
-            if (lvl === 0 && opTokens.includes(str[i])) return i;
-        }
-        return -1;
-    };
-
-    let opIdx = findTopOperator(clean, ['+']);
-    if (opIdx === -1) opIdx = findTopOperator(clean, ['*', '\u22BC', '\u22BD', '\u2295', '\u2299']);
-
-    if (opIdx !== -1) {
-        let op = clean[opIdx];
-        let type = op === '+' ? 'OR' : op === '*' ? 'AND' : op === '\u22BC' ? 'NAND' : op === '\u22BD' ? 'NOR' : op === '\u2295' ? 'XOR' : 'XNOR';
-        return {
-            type: type,
-            left: parseToTree(clean.substring(0, opIdx)),
-            right: parseToTree(clean.substring(opIdx + 1))
-        };
-    }
-
-    if (clean.startsWith('!')) {
-        return { type: 'NOT', center: parseToTree(clean.substring(1)) };
-    }
-
-    return { type: 'LITERAL', val: clean };
 }
 
 function drawCircuit(expr) {
@@ -91,105 +52,178 @@ function drawCircuit(expr) {
     canvas.style.width = '100%'; canvas.style.height = '100%';
     
     let clean = normalizeCircuitExpression(expr);
-    if(clean === '0' || clean === '1') { 
+    
+    if(clean==='0'||clean==='1') { 
         const ctx = setupCanvas(canvas); ctx.clearRect(0,0,canvas.width,canvas.height);
-        ctx.font="bold 20px Arial"; ctx.fillStyle="#333"; ctx.fillText("Saída Constante: " + clean, 50, 50); return; 
+        ctx.font="bold 20px Arial"; ctx.fillStyle="#333"; ctx.fillText("Saída Constante: "+clean,50,50); return; 
+    }
+    
+    let terms = []; let lvl = 0, buff = "";
+    let topLevelOp = '+'; 
+    let hasTopOr = false;
+    
+    for(let char of clean) { 
+        if(char==='(') lvl++; 
+        else if(char===')') lvl--; 
+        if (lvl === 0 && char === '+') hasTopOr = true;
+    }
+    
+    if (!hasTopOr && clean.includes('*')) {
+        topLevelOp = '*';
     }
 
-    const logicTree = parseToTree(clean);
+    lvl = 0; buff = "";
+    for(let char of clean) { 
+        if(char==='(') lvl++; 
+        else if(char===')') lvl--; 
+        
+        if(char === topLevelOp && lvl === 0){ 
+            if(buff) terms.push(buff); buff=""; 
+        } else {
+            buff += char; 
+        }
+    }
+    if(buff) terms.push(buff);
 
-    const getTreeDepth = (node) => {
-        if (!node || node.type === 'LITERAL') return 1;
-        if (node.type === 'NOT') return 1 + getTreeDepth(node.center);
-        return 1 + Math.max(getTreeDepth(node.left), getTreeDepth(node.right));
-    };
-    const depth = getTreeDepth(logicTree);
-    const totalWidth = Math.max(450, 120 + (depth * 75));
-    const totalHeight = 360;
+    // Ajuste nos trilhos verticais para dar maior espaçamento inicial
+    const railX = { 'A': 35, 'B': 60, 'C': 85, 'D': 110 };
+    const startGateX = 160, gateStepX = 75, rowHeight = 85;
     
+    let maxDepth = 1;
+    terms.forEach(t => { let lits = (t.match(/[A-D]/g) || []).length; if(lits > 2) maxDepth = Math.max(maxDepth, lits - 1); });
+    let orDepth = terms.length > 1 ? terms.length - 1 : 0;
+    
+    // Dimensionamento do Canvas expandido para evitar quebras de borda
+    const totalWidth = Math.max(480, startGateX + (maxDepth * gateStepX) + (orDepth * gateStepX) + 120);
+    const totalHeight = Math.max(380, (terms.length * rowHeight) + 110);
     canvas.style.width = totalWidth + 'px'; canvas.style.height = totalHeight + 'px';
     const ctx = setupCanvas(canvas);
     
-    const railX = { 'A': 35, 'B': 55, 'C': 75, 'D': 95 };
-    ctx.lineWidth = 2; ctx.font = "bold 12px Arial";
+    ctx.lineWidth = 2; ctx.font = "bold 13px Arial";
     ['A','B','C','D'].forEach(v => {
-        ctx.strokeStyle = '#94a3b8'; ctx.beginPath(); ctx.moveTo(railX[v], 20); ctx.lineTo(railX[v], totalHeight - 20); ctx.stroke();
-        ctx.fillStyle = '#2563eb'; ctx.fillText(v, railX[v]-4, 15);
+        ctx.strokeStyle = '#94a3b8'; ctx.beginPath(); ctx.moveTo(railX[v], 25); ctx.lineTo(railX[v], totalHeight - 25); ctx.stroke();
+        ctx.fillStyle = '#2563eb'; ctx.fillText(v, railX[v]-4, 18);
     });
 
-    let gateCountY = 0;
+    const termOutputs = []; let currentY = 65;
+    
+    terms.forEach((term, termIdx) => {
+        let lits = [];
+        let localGateType = 'AND';
+        if (topLevelOp === '*') {
+            if (term.includes('+')) localGateType = 'OR';
+        } else {
+            if (term.includes('*')) localGateType = 'AND';
+        }
 
-    function renderNode(node, currentDepth, isRoot = false) {
-        let x = totalWidth - (currentDepth * 70) - 40;
-        
-        if (node.type === 'LITERAL') {
-            gateCountY += 35;
-            let y = gateCountY;
-            drawWire(ctx, railX[node.val], y, x, y, false);
-            return { x: x, y: y };
+        if(term.includes('\u2295')) { 
+            localGateType = 'XOR';
+            term.split('\u2295').forEach(p => { const m = p.match(/([A-D])/); if(m) lits.push({c:m[1], n:p.includes('!')}); });
+        } else if(term.includes('\u2299')) {
+            localGateType = 'XNOR';
+            term.split('\u2299').forEach(p => { const m = p.match(/([A-D])/); if(m) lits.push({c:m[1], n:p.includes('!')}); });
+        } else {
+            ['A','B','C','D'].forEach(v => {
+                if (term.includes(v)) {
+                    let isNegated = false;
+                    let vIdx = term.indexOf(v);
+                    if (vIdx > 0 && term[vIdx - 1] === '!') isNegated = true;
+                    lits.push({ c: v, n: isNegated });
+                }
+            });
+            lits.sort((x, y) => railX[x.c] - railX[y.c]);
         }
         
-        if (node.type === 'NOT') {
-            // CORREÇÃO ESTÉTICA: Se for a raiz absoluta da expressão solta (ex: Y = A'), desenha a NOT física (triângulo)
-            if (isRoot && node.center.type === 'LITERAL') {
-                let childPos = renderNode(node.center, currentDepth + 1);
-                let outX = x + 20;
-                drawOrthogonalWire(ctx, childPos.x, childPos.y, x, childPos.y, false);
-                drawGateSimple(ctx, 'NOT', x, childPos.y);
-                return { x: outX, y: childPos.y };
+        if(lits.length === 0) return;
+        let curX = startGateX;
+        
+        if (lits.length === 1 && localGateType === 'AND') {
+            let lit = lits[0];
+            if (lit.n) {
+                drawWire(ctx, railX[lit.c], currentY, curX, currentY, false, termIdx);
+                drawGateSimple(ctx, 'NOT', curX, currentY);
+                termOutputs.push({x: curX + 20, y: currentY});
             } else {
-                // Caso contrário, repassa para o pai tratar isso como uma bolinha na entrada[cite: 2]
-                return renderNode(node.center, currentDepth, false);
+                drawWire(ctx, railX[lit.c], currentY, curX, currentY, false, termIdx);
+                termOutputs.push({x: curX, y: currentY});
             }
+        } else {
+            // TURBINADO: Injeta offsets verticais simétricos (-12 e +12) para os pinos de entrada não colarem
+            drawWire(ctx, railX[lits[0].c], currentY - 12, curX, currentY - 12, lits[0].n, termIdx);
+            drawWire(ctx, railX[lits[1].c], currentY + 12, curX, currentY + 12, lits[1].n, termIdx + 1);
+            
+            drawGateSimple(ctx, localGateType, curX, currentY);
+            curX += gateStepX; 
+            
+            for(let i=2; i<lits.length; i++) {
+                ctx.strokeStyle = '#475569'; ctx.beginPath();
+                ctx.moveTo(curX - gateStepX + 20, currentY); 
+                ctx.lineTo(curX, currentY - 12); 
+                ctx.stroke();
+
+                drawWire(ctx, railX[lits[i].c], currentY + 22, curX, currentY + 12, lits[i].n, termIdx + i); 
+                
+                drawGateSimple(ctx, localGateType, curX, currentY);
+                curX += gateStepX;
+            }
+            termOutputs.push({x: curX - gateStepX + 20, y: currentY}); 
+        } currentY += rowHeight;
+    });
+
+    if (termOutputs.length === 1) {
+        ctx.strokeStyle = '#000'; ctx.beginPath(); ctx.moveTo(termOutputs[0].x, termOutputs[0].y); ctx.lineTo(termOutputs[0].x + 50, termOutputs[0].y); ctx.stroke();
+        ctx.fillStyle = '#000'; ctx.fillText("Y", termOutputs[0].x + 55, termOutputs[0].y + 4);
+    } else {
+        let curX = 0; termOutputs.forEach(t => curX = Math.max(curX, t.x)); curX += 45; 
+        let prevOutPoint = {x: termOutputs[0].x, y: termOutputs[0].y};
+        let finalGateType = topLevelOp === '+' ? 'OR' : 'AND';
+
+        for(let i=1; i<termOutputs.length; i++) {
+            let nextTerm = termOutputs[i];
+            let gateY = (i===1) ? (termOutputs[0].y + termOutputs[1].y)/2 : nextTerm.y;
+            
+            // TURBINADO: Envia o índice 'i' para criar dobras ortogonais paralelas sem nenhuma sobreposição
+            drawOrthogonalWire(ctx, prevOutPoint.x, prevOutPoint.y, curX, gateY - 12, i);
+            drawOrthogonalWire(ctx, nextTerm.x, nextTerm.y, curX, gateY + 12, i + 1);
+            
+            drawGateSimple(ctx, finalGateType, curX, gateY);
+            prevOutPoint = {x: curX + 20, y: gateY}; curX += gateStepX; 
         }
-
-        // Lógica de portas binárias (AND, OR, etc)
-        // Checa de antemão se as entradas filhas são inversões diretas de variáveis soltas
-        let leftIsNegated = (node.left.type === 'NOT' && node.left.center.type === 'LITERAL');
-        let rightIsNegated = (node.right.type === 'NOT' && node.right.center.type === 'LITERAL');
-
-        let leftPos = renderNode(node.left, currentDepth + 1, false);
-        let rightPos = renderNode(node.right, currentDepth + 1, false);
-        
-        let midY = (leftPos.y + rightPos.y) / 2;
-        
-        // Passa a flag de inversão para a linha de conexão (desenha a bolinha na entrada da porta)[cite: 2]
-        drawOrthogonalWire(ctx, leftPos.x, leftPos.y, x, midY - 8, leftIsNegated);
-        drawOrthogonalWire(ctx, rightPos.x, rightPos.y, x, midY + 8, rightIsNegated);
-        
-        drawGateSimple(ctx, node.type, x, midY);
-        return { x: x + 30, y: midY };
+        ctx.strokeStyle = '#000'; ctx.beginPath(); ctx.moveTo(prevOutPoint.x, prevOutPoint.y); ctx.lineTo(prevOutPoint.x + 40, prevOutPoint.y); ctx.stroke();
+        ctx.fillStyle = '#000'; ctx.fillText("Y", prevOutPoint.x + 45, prevOutPoint.y + 5);
     }
-
-    // Passa true no nó raiz para indicar o ponto final do circuito
-    let finalOut = renderNode(logicTree, 1, true);
-
-    ctx.strokeStyle = '#000'; ctx.beginPath(); ctx.moveTo(finalOut.x, finalOut.y); ctx.lineTo(totalWidth - 25, finalOut.y); ctx.stroke();
-    ctx.fillStyle = '#000'; ctx.fillText("Y", totalWidth - 20, finalOut.y + 4);
 }
 
-function drawWire(ctx, x1, y1, x2, y2, inverted) {
-    ctx.fillStyle = '#2563eb'; ctx.beginPath(); ctx.arc(x1, y1, 3, 0, Math.PI*2); ctx.fill();
+// TURBINADO: Usa um fator de offset baseado no índice da linha para evitar sobreposição total nos canais
+function drawWire(ctx, x1, y1, x2, y2, inverted, lineIdx = 0) {
+    ctx.fillStyle = '#2563eb'; ctx.beginPath(); ctx.arc(x1, y1, 3.5, 0, Math.PI*2); ctx.fill();
     ctx.strokeStyle = '#475569'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x1, y1);
-    if (Math.abs(y1 - y2) < 2) { ctx.lineTo(x2, y2); } else { ctx.lineTo(x2 - 12, y1); ctx.lineTo(x2 - 12, y2); ctx.lineTo(x2, y2); }
+    
+    if (Math.abs(y1 - y2) < 2) { 
+        ctx.lineTo(x2, y2); 
+    } else { 
+        // Desvio dinâmico calibrado para canais de descida paralelos isolados
+        let safeOffset = 14 + (lineIdx * 5);
+        ctx.lineTo(x2 - safeOffset, y1); 
+        ctx.lineTo(x2 - safeOffset, y2); 
+        ctx.lineTo(x2, y2); 
+    }
     ctx.stroke();
     if (inverted) {
         ctx.fillStyle = '#fff'; ctx.strokeStyle = '#000'; ctx.lineWidth = 1.5;
-        ctx.beginPath(); ctx.arc(x2 - 4, y2, 2.5, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.arc(x2 - 5, y2, 2.5, 0, Math.PI*2); ctx.fill(); ctx.stroke();
     }
 }
 
-// Atualizada para aceitar o desenho automático da bolinha inversora nas conexões ortogonais
-function drawOrthogonalWire(ctx, x1, y1, x2, y2, inverted = false) {
-    ctx.strokeStyle = '#475569'; ctx.lineWidth = 2; ctx.beginPath();
-    ctx.moveTo(x1, y1);
-    let midX = (x1 + x2) / 2; ctx.lineTo(midX, y1); ctx.lineTo(midX, y2); ctx.lineTo(x2, y2); ctx.stroke();
+// TURBINADO: Divide o ponto médio usando canais escalonados para dobras ortogonais limpas
+function drawOrthogonalWire(ctx, x1, y1, x2, y2, channelIdx = 1) {
+    ctx.strokeStyle = '#475569'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x1, y1);
     
-    if (inverted) {
-        // Renderiza a bolinha de negação industrial exatamente no encaixe da porta[cite: 2]
-        ctx.fillStyle = '#fff'; ctx.strokeStyle = '#000'; ctx.lineWidth = 1.5;
-        ctx.beginPath(); ctx.arc(x2 - 3, y2, 2.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-    }
+    // Altera sutilmente o ponto X da dobra baseado no canal do termo
+    let spacingFactor = 0.4 + (channelIdx * 0.05);
+    let midX = x1 + (x2 - x1) * spacingFactor;
+    
+    ctx.lineTo(midX, y1); ctx.lineTo(midX, y2); ctx.lineTo(x2, y2); ctx.stroke();
 }
 
 function drawGateSimple(ctx, type, x, y) {
