@@ -28,6 +28,7 @@ function toggleCell(idx) {
     el.className = 'kmap-cell'+(kmapData[idx]===1?' state-1':kmapData[idx]===2?' state-x':' state-0'); 
     el.innerText = kmapData[idx]===2?'X':kmapData[idx]; 
 }
+
 function highlightGroup(indices) {
     document.querySelectorAll('.kmap-cell').forEach(c => c.classList.remove('educ-highlight'));
     if(!indices) return;
@@ -124,6 +125,7 @@ function filterPrimes(groups) {
         } if(!sub) primes.push(unique[i]);
     } return primes;
 }
+
 function selectMinimalCover(primes, req) {
     primes.sort((a,b) => {
         if (b.size !== a.size) return b.size - a.size;
@@ -207,6 +209,28 @@ function safeXorDetection(terms) {
                     }
                 }
             } if (!merged) nextTerms.push(currentTerms[i]);
-                } if (changed) currentTerms = nextTerms;
+        } if (changed) currentTerms = nextTerms;
     } return currentTerms.join(" + ");
+}
+
+// --- INTERGRAÇÃO ---
+function sendToKMap() {
+    const expr = document.getElementById('custom-expression').value; if(!expr) return;
+    const targetVars = expr.includes('D')?4:expr.includes('C')?3:2;
+    document.getElementById('kmap-vars').value = targetVars; initKMapGrid();
+    for(let i=0; i<(1<<targetVars); i++) {
+        let ctx = {A:0,B:0,C:0,D:0}; for(let v=0;v<targetVars;v++) ctx[['A','B','C','D'][v]] = (i>>(targetVars-1-v))&1;
+        if(parseExpression(expr, ctx)) { kmapData[i]=1; document.getElementById('cell-'+i).className = 'kmap-cell state-1'; document.getElementById('cell-'+i).innerText='1'; }
+    }
+    solveKMap(); document.querySelectorAll('.nav-btn')[2].click();
+}
+
+function sendCalculatedToTable() {
+    let eq = lastCalculatedEquation;
+    if(!eq) eq = "0";
+    if(eq.startsWith("Y = ")) eq = eq.substring(4);
+
+    document.getElementById('tt-mode').value = 'custom'; toggleTableMode();
+    document.getElementById('custom-expression').value = eq;
+    document.querySelectorAll('.nav-btn')[1].click(); generateTruthTable();
 }
