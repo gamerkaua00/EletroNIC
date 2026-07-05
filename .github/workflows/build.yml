@@ -44,38 +44,35 @@ jobs:
           cd app
           cordova platform add android
 
-      # --- PASSO CORRIGIDO PARA EVITAR QUEBRAS COM ARQUIVOS EXTERNOS ---
       - name: Inject & Protect Source Code
         run: |
-          # Detecta variações no nome do arquivo (Index.html vs index.html)
-          HTML_SRC="index.html"
-          if [ -f "Index.html" ]; then HTML_SRC="Index.html"; fi
-
-          rm -f app/www/index.html
-          
-          echo "Criando diretórios nativos no Cordova..."
+          echo "Preparando diretórios do Cordova..."
+          rm app/www/index.html
           mkdir -p app/www/css app/www/js
           
-          echo "Movendo scripts e estilos estruturados primeiro..."
-          if [ -d "css" ]; then cp -r css/* app/www/css/; fi
-          if [ -d "js" ]; then cp -r js/* app/www/js/; fi
+          echo "Minificando e copiando folha de estilo (CSS)..."
+          html-minifier-terser --minify-css true -o app/www/css/styles.css css/styles.css
           
-          echo "Aplicando proteção de código e minificando o HTML..."
+          echo "Minificando e copiando lógica de controle (JS)..."
+          for f in js/*.js; do
+            filename=$(basename "$f")
+            html-minifier-terser --minify-js true -o "app/www/js/$filename" "$f"
+          done
+          
+          echo "Estruturando e limpando marcação HTML de entrada..."
           html-minifier-terser \
             --collapse-whitespace \
             --remove-comments \
-            --minify-css true \
-            --minify-js true \
             --output app/www/index.html \
-            $HTML_SRC
+            index.html
           
-          echo "Configurando preferências visuais..."
+          echo "Configurando preferências visuais no config.xml..."
           sed -i '/<\/widget>/i \    <preference name="ShowSplashScreen" value="false" />' app/config.xml
           sed -i '/<\/widget>/i \    <preference name="SplashScreenDelay" value="0" />' app/config.xml
           sed -i '/<\/widget>/i \    <preference name="FadeSplashScreen" value="false" />' app/config.xml
           sed -i '/<\/widget>/i \    <preference name="BackgroundColor" value="0xff0f172a" />' app/config.xml
           sed -i '/<\/widget>/i \    <preference name="AndroidWindowSplashScreenBackground" value="#0f172a" />' app/config.xml
-
+          
           if [ -f "icon.png" ]; then
             echo "Ícone personalizado encontrado! Configurando..."
             cp icon.png app/www/icon.png
@@ -89,7 +86,7 @@ jobs:
           cd app
           cordova build android --release -- --packageType=apk
 
-      # --- ASSINATURA DIGITAL ---
+      # --- ASSINATURA CORRIGIDA ---
       - name: Sign APK
         id: sign_app
         uses: ilharp/sign-android-release@v1
@@ -101,7 +98,7 @@ jobs:
           keyPassword: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           buildToolsVersion: ${{ steps.android_tools.outputs.version }}
         
-      # Upload do artefato final para download
+      # Upload do APK
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
