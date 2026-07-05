@@ -3,22 +3,412 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EletroNIC</title>
-    <link rel="stylesheet" href="css/style.css">
-    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-</head>
-<body>
-    <div id="splash-screen"><div class="splash-content"><h1>KMZ</h1></div></div>
-    <header><h1>EletroNIC</h1></header>
-    <main id="app-container"></main>
-    <nav id="nav-container"></nav>
+    <!-- METADADOS DE AUTORIA E SEGURANÇA -->
+    <meta name="author" content="Kauã Mazur dos Reis">
+    <meta name="copyright" content="© 2026 KMZ Technologies">
+    <meta name="application-name" content="EletroNIC">
+    <meta name="description" content="App de Eletrônica Digital desenvolvido por Kauã Mazur dos Reis (KMZ). Todos os direitos reservados.">
     
-    <!-- Scripts -->
-    <script src="js/simulation.js"></script>
+    <title>EletroNIC</title>
+
+    <link rel="stylesheet" href="css/styles.css">
+
+    <!-- SDK DO EMAILJS INTEGRADO -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script type="text/javascript">
+       (function(){
+          emailjs.init("Kgh--G2bCKQhGtGc0");
+       })();
+    </script>
+</head>
+<body oncontextmenu="return false;">
+
+    <!-- TELA DE ABERTURA KMZ -->
+    <div id="splash-screen">
+        <div class="splash-content">
+            <div class="kmz-logo-text">KMZ</div>
+            <div class="kmz-sub-text">TECHNOLOGIES</div>
+        </div>
+    </div>
+
+    <header>
+        <svg style="width:24px;height:24px;fill:var(--primary);" viewBox="0 0 24 24"><path d="M13,2L3,14H12L11,22L21,10H12L13,2Z" /></svg>
+        <h1>EletroNIC</h1>
+    </header>
+
+    <main>
+        <!-- SEÇÃO 1: SIMULADOR -->
+        <section id="section-gates" class="view-section active">
+            <h2>Simulador</h2>
+            <div class="card">
+                <label>Escolha a Porta Lógica</label>
+                <select id="gate-selector" onchange="updateGateLogic()">
+                    <option value="AND">AND (E)</option>
+                    <option value="OR">OR (OU)</option>
+                    <option value="NOT">NOT (NÃO)</option>
+                    <option value="NAND">NAND</option>
+                    <option value="NOR">NOR</option>
+                    <option value="XOR">XOR</option>
+                    <option value="XNOR">XNOR</option>
+                </select>
+                
+                <div class="gate-visualizer">
+                    <div class="io-row">
+                        <div class="io-ctrl">
+                            <label class="switch"><input type="checkbox" id="inputA" onchange="updateGateLogic()"><span class="slider"></span></label>
+                            <span style="font-weight:bold; color:var(--text-muted)">Entrada A</span>
+                        </div>
+                        
+                        <div id="gate-svg" style="width:120px; height:70px; display:flex; align-items:center; justify-content:center;"></div>
+                        
+                        <div class="io-ctrl" id="inputB-container">
+                            <label class="switch"><input type="checkbox" id="inputB" onchange="updateGateLogic()"><span class="slider"></span></label>
+                            <span style="font-weight:bold; color:var(--text-muted)">Entrada B</span>
+                        </div>
+                    </div>
+                    
+                    <div style="text-align: center; background: var(--bg); padding: 15px; border-radius: 12px; border: 1px solid var(--border); width: 100%;">
+                        <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom: 8px; text-transform:uppercase; letter-spacing:1px;">Resultado da Saída</div>
+                        <div id="outputLed" style="width:50px; height:50px; border-radius:50%; background:#333; margin:0 auto; transition:0.3s; box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);"></div>
+                        <div id="logic-text" style="color:var(--text); font-size:1.1rem; margin-top:10px; font-family:'Courier New', monospace; font-weight:bold;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="kmz-footer">© 2026 KMZ Technologies</div>
+        </section>
+
+        <!-- SEÇÃO 2: TABELA VERDADE -->
+        <section id="section-table" class="view-section">
+            <h2>Tabela Verdade</h2>
+            <div class="card">
+                <div class="flex-between" style="margin-bottom:10px;">
+                    <label style="margin:0;">Tipo de Entrada</label>
+                    <select id="tt-mode" onchange="toggleTableMode()" style="width:140px; padding:8px; margin:0;">
+                        <option value="simple">Porta Única</option>
+                        <option value="custom">Expressão Livre</option>
+                    </select>
+                </div>
+
+                <div id="mode-simple-controls">
+                    <select id="tt-type" onchange="generateTruthTable()">
+                        <option value="AND">A E B (AND)</option>
+                        <option value="OR">A OU B (OR)</option>
+                        <option value="XOR">A XOR B</option>
+                        <option value="NAND">A NAND B</option>
+                        <option value="NOR">A NOR B</option>
+                    </select>
+                </div>
+
+                <div id="mode-custom-controls" class="hidden">
+                    <div style="display:flex; gap:8px;">
+                        <input type="text" id="custom-expression" placeholder="Use o teclado abaixo..." readonly style="margin:0;">
+                        <button class="btn btn-danger" style="width:auto; margin:0; padding:0 15px;" onclick="document.getElementById('custom-expression').value=''">Limpar</button>
+                    </div>
+                    
+                    <div class="keyboard-grid">
+                        <button class="key-btn var" onclick="ins('A')">A</button><button class="key-btn var" onclick="ins('B')">B</button><button class="key-btn var" onclick="ins('C')">C</button><button class="key-btn var" onclick="ins('D')">D</button>
+                        <button class="key-btn op" onclick="ins('+')">OU</button><button class="key-btn op" onclick="ins('*')">E</button><button class="key-btn op" onclick="ins('\'')">NÃO</button><button class="key-btn del" onclick="backspace()">⌫</button>
+                        <button class="key-btn complex" onclick="ins('\u2295')">XOR</button><button class="key-btn complex" onclick="ins('\u2299')">XNOR</button><button class="key-btn complex" onclick="ins('\u22BC')">NAND</button><button class="key-btn complex" onclick="ins('\u22BD')">NOR</button>
+                        <button class="key-btn" onclick="ins('(')">(</button><button class="key-btn" onclick="ins(')')">)</button><div style="grid-column:span 2"></div>
+                    </div>
+                    
+                    <div class="btn-row">
+                        <button class="btn" onclick="generateTruthTable()">Criar Tabela</button>
+                        <button class="btn btn-outline" onclick="sendToKMap()">Enviar para Mapa K</button>
+                    </div>
+                    <button class="btn btn-success" style="margin-top:10px;" onclick="sendToCircuit('custom')">Ver Circuito</button>
+                    <div id="expression-error" style="color:var(--danger); display:none; font-size:0.9rem; margin-top:10px; text-align:center; background:rgba(239, 68, 68, 0.1); padding:8px; border-radius:8px;">Expressão inválida!</div>
+                </div>
+
+                <div class="table-container">
+                    <table class="truth-table" id="truth-table-display"></table>
+                </div>
+                
+                <button class="btn btn-outline" style="margin-top:10px; font-size:0.9rem;" onclick="exportTableImage()">📷 Visualizar p/ Print</button>
+            </div>
+        </section>
+
+        <!-- SEÇÃO 3: MAPA DE KARNAUGH -->
+        <section id="section-kmap" class="view-section">
+            <h2>Mapa de Karnaugh</h2>
+            <div class="card">
+                <div class="flex-between" style="margin-bottom:15px;">
+                    <label style="margin:0;">Qtd. Variáveis</label>
+                    <select id="kmap-vars" onchange="initKMapGrid()" style="width:120px; padding:8px; margin:0;">
+                        <option value="4">4 (ABCD)</option>
+                        <option value="3">3 (ABC)</option>
+                        <option value="2">2 (AB)</option>
+                    </select>
+                </div>
+                
+                <div class="kmap-wrapper">
+                    <div id="kmap-container" class="kmap-grid vars-4"></div>
+                </div>
+                
+                <button class="btn btn-success" onclick="solveKMap()">Resolver Mapa</button>
+                
+                <div style="margin-top:20px;">
+                    <span style="font-size:0.85rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; font-weight:bold;">Resultado Simplificado</span>
+                    <div class="equation-box" id="kmap-equation-text">Y = 0</div>
+                    <p class="equation-hint">👆 Toque nos termos acima para ver o agrupamento no mapa</p>
+                </div>
+                
+                <div class="btn-row">
+                    <button class="btn btn-outline" onclick="sendCalculatedToTable()">Copiar para Tabela</button>
+                    <button class="btn btn-outline" onclick="initKMapGrid()">Limpar Tudo</button>
+                </div>
+                <button class="btn" style="margin-top:10px;" onclick="sendToCircuit('kmap')">Criar Circuito</button>
+            </div>
+        </section>
+
+        <!-- SEÇÃO 4: DIAGRAMA LÓGICO -->
+        <section id="section-circuit" class="view-section">
+            <h2>Diagrama Lógico</h2>
+            <div class="card">
+                <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:10px;">Expressão Atual: <span id="circuit-expression-display" style="color:var(--primary); font-family:'Courier New'; font-weight:bold;"></span></p>
+                <div class="canvas-container">
+                    <canvas id="circuit-canvas"></canvas>
+                </div>
+                <button class="btn btn-outline" style="margin-top:15px;" onclick="exportCircuitImage()">📷 Visualizar p/ Print</button>
+                <p style="font-size:0.75rem; color:var(--text-muted); margin-top:10px; text-align:center;">
+                    <span style="display:inline-block; width:8px; height:8px; background:var(--primary); border-radius:50%;"></span> Conexão &nbsp;
+                    <span style="display:inline-block; width:8px; height:8px; background:#fff; border:1px solid #000; border-radius:50%;"></span> Inversor
+                </p>
+            </div>
+        </section>
+
+        <!-- SEÇÃO 5: CALCULADORA -->
+        <section id="section-calc" class="view-section">
+            <h2>Calculadora</h2>
+            
+            <div class="card">
+                <h3>Conversor Rápido</h3>
+                <div class="conv-row"><span class="conv-label">DEC</span><input type="text" id="in-dec" oninput="convertBase('dec')" placeholder="Decimal (0-9)"></div>
+                <div class="conv-row"><span class="conv-label">BIN</span><input type="text" id="in-bin" oninput="convertBase('bin')" placeholder="Binário (0-1)"></div>
+                <div class="conv-row"><span class="conv-label">OCT</span><input type="text" id="in-oct" oninput="convertBase('oct')" placeholder="Octal (0-7)"></div>
+                <div class="conv-row"><span class="conv-label">HEX</span><input type="text" id="in-hex" oninput="convertBase('hex')" placeholder="Hexa (0-F)"></div>
+                <button class="btn btn-outline" onclick="clearConv()">Limpar Campos</button>
+            </div>
+
+            <div class="card">
+                <h3>Cálculos</h3>
+                <div class="calc-input-group">
+                    <input type="text" id="calc-a" placeholder="Valor A" oninput="filterCalc(this, 'base-a')">
+                    <select id="base-a" onchange="filterCalc(document.getElementById('calc-a'), 'base-a')" style="width:90px; margin:0;">
+                        <option value="2">BIN</option><option value="10" selected>DEC</option><option value="8">OCT</option><option value="16">HEX</option>
+                    </select>
+                </div>
+                
+                <div style="display:flex; justify-content:center; margin-bottom:12px; gap:8px;">
+                    <select id="calc-op" style="width:80px; text-align:center; font-weight:bold; font-size:1.2rem; margin:0;">
+                        <option value="+">+</option><option value="-">-</option><option value="*">×</option><option value="/">÷</option>
+                    </select>
+                </div>
+
+                <div class="calc-input-group">
+                    <input type="text" id="calc-b" placeholder="Valor B" oninput="filterCalc(this, 'base-b')">
+                    <select id="base-b" onchange="filterCalc(document.getElementById('calc-b'), 'base-b')" style="width:90px; margin:0;">
+                        <option value="2" selected>BIN</option><option value="10">DEC</option><option value="8">OCT</option><option value="16">HEX</option>
+                    </select>
+                </div>
+                
+                <button class="btn btn-success" onclick="calcUniversal()">Calcular</button>
+                
+                <div id="calc-results" style="margin-top:20px; display:none; background:var(--bg); padding:15px; border-radius:12px; border:1px solid var(--border);">
+                    <div class="res-row"><span>Decimal:</span><span id="res-dec"></span></div>
+                    <div class="res-row"><span>Binário:</span><span id="res-bin"></span></div>
+                    <div class="res-row"><span>Octal:</span><span id="res-oct"></span></div>
+                    <div class="res-row"><span>Hexa:</span><span id="res-hex"></span></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SEÇÃO 6: CHIPS -->
+        <section id="section-chips" class="view-section">
+            <h2>Pinagem (Chips TTL)</h2>
+            <div class="card">
+                <select id="chip-selector" onchange="drawChip()">
+                    <option value="7408">7408 - AND (4 portas)</option>
+                    <option value="7432">7432 - OR (4 portas)</option>
+                    <option value="7404">7404 - NOT (6 portas)</option>
+                    <option value="7400">7400 - NAND (4 portas)</option>
+                    <option value="7402">7402 - NOR (4 portas)</option>
+                    <option value="7486">7486 - XOR (4 portas)</option>
+                    <option value="74266">74266 - XNOR (4 portas)</option>
+                </select>
+                <div class="canvas-container" style="background: linear-gradient(to bottom, #e2e8f0, #cbd5e1);">
+                    <canvas id="chip-canvas"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- SEÇÃO 7: AJUDA & CONTATO -->
+        <section id="section-manual" class="view-section">
+            <h2>Ajuda & Contato</h2>
+            <div class="card">
+                <div style="text-align:center; padding: 20px 0;">
+                    <h3 style="color:var(--primary); font-size: 1.5rem;">EletroNIC</h3>
+                    <p style="color:var(--text-muted);">Versão 1.0 (KMZ Release)</p>
+                </div>
+                
+                <button class="btn btn-success" style="margin-bottom: 25px; box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);" onclick="openSupportModal()">
+                    ⚡ Abrir Suporte com Volt IA
+                </button>
+                
+                <details>
+                    <summary>1. Simulador Básico</summary>
+                    <div class="manual-content">
+                        O <strong>Simulador</strong> permite testar o comportamento de portas lógicas individuais.<br><br>
+                        1. Selecione a porta (ex: AND, OR).<br>
+                        2. Toque nos interruptores (Switches) para mudar as entradas entre 0 e 1.<br>
+                        3. Observe o LED e o diagrama mudarem de cor (Verde = Ligado/1, Cinza = Desligado/0).
+                    </div>
+                </details>
+
+                <details>
+                    <summary>2. Tabela Verdade & Expressões</summary>
+                    <div class="manual-content">
+                        Gere tabelas verdade completas para qualquer lógica.<br><br>
+                        <strong>Modo Expressão Livre:</strong> Use o teclado especial para digitar equações como <code>(A+B)*C</code> ou <code>A ⊕ B</code>. 
+                        O app gera todas as combinações de entrada (000 a 111) e mostra a saída.<br><br>
+                        <strong>Dica:</strong> Você pode enviar a expressão direto para o Mapa de Karnaugh ou ver o Circuito.
+                    </div>
+                </details>
+
+                <details>
+                    <summary>3. Mapa de Karnaugh (K-Map)</summary>
+                    <div class="manual-content">
+                        Ferramenta para simplificar lógica booleana.<br><br>
+                        1. Escolha o número de variáveis (2, 3 ou 4).<br>
+                        2. Toque nas células para alternar entre <strong>0</strong>, <strong>1</strong> e <strong>X</strong> (Don't Care).<br>
+                        3. Clique em <strong>Resolver Mapa</strong>. O app encontrará a equação mais simples possível, priorizando grupos maiores (Oitavas > Quadras > Pares).
+                        <br>4. <strong>Interatividade:</strong> Toque nos termos da equação resultante para ver quais células do mapa foram agrupadas!
+                    </div>
+                </details>
+
+                <details>
+                    <summary>4. Desenhista de Circuitos</summary>
+                    <div class="manual-content">
+                        Cria automaticamente o esquema elétrico (diagrama) a partir de uma expressão.<br><br>
+                        - Suporta portas AND, OR, NOT, XOR, XNOR.<br>
+                        - Desenha em "Cascata": Se houver muitas entradas, ele conecta portas em sequência de forma organizada.<br>
+                        - Linhas retas e organizadas (padrão industrial).<br>
+                        - <strong>Exportar:</strong> Use o botão "Visualizar p/ Print" para expandir o circuito e tirar um print da tela.
+                    </div>
+                </details>
+
+                <details>
+                    <summary>5. Calculadora de Bases</summary>
+                    <div class="manual-content">
+                        Realize conversões e contas entre bases numéricas.<br><br>
+                        - Digite em qualquer campo (DEC, BIN, OCT, HEX) para converter instantaneamente.<br>
+                        - Use a calculadora abaixo para somar, subtrair, multiplicar ou dividir números de bases diferentes (ex: Binário + Hexadecimal).
+                    </div>
+                </details>
+                
+                <div style="margin-top:30px; padding-top:20px; border-top:1px solid var(--border);">
+                    <h3 style="color:var(--primary); margin-bottom:15px;">Suporte & Contato</h3>
+                    <p style="color:var(--text-muted); margin-bottom:15px; font-size:0.9rem;">
+                        Encontrou um bug ou tem uma sugestão? Entre em contato diretamente com o desenvolvedor:
+                    </p>
+                    
+                    <div class="contact-item">
+                        <svg viewBox="0 0 24 24"><path d="M20,8L12,13L4,8V6L12,11L20,6M20,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V6C22,4.89 21.1,4 20,4Z" /></svg>
+                        <div>
+                            <div class="contact-label">E-mail</div>
+                            <div class="contact-value">kmzsuportt1@gmail.com</div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top:20px; text-align:center;">
+                        <span style="display:block; color:var(--text-muted); font-size:0.9rem; margin-bottom:4px;">Desenvolvedor</span>
+                        <strong style="font-size:1.2rem; color:var(--primary);">Kauã Mazur dos Reis (KMZ)</strong>
+                        <div style="font-size:0.8rem; color:var(--text-muted); margin-top:5px;">© 2026 Todos os direitos reservados</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <nav>
+        <button class="nav-btn active" onclick="switchTab('gates', this)"><svg viewBox="0 0 24 24"><path d="M9,2C5.93,2 4.14,3.23 3.09,4.92L11,17.18L18.91,4.92C17.86,3.23 16.07,2 13,2H9M6,20A2,2 0 0,0 8,22H14A2,2 0 0,0 16,20V19H6V20Z"/></svg>Sim</button>
+        <button class="nav-btn" onclick="switchTab('table', this)"><svg viewBox="0 0 24 24"><path d="M4,3H20A2,2 0 0,1 22,5V20A2,2 0 0,1 20,22H4A2,2 0 0,1 2,20V5A2,2 0 0,1 4,3M4,7V10H8V7H4M10,7V10H14V7H10M20,10V7H16V10H20M4,12V15H8V12H4M4,20H8V17H4V20M10,12V15H14V12H10M10,20H14V17H10V20M20,20V17H16V20H20M20,12H16V15H20V12Z"/></svg>Tab</button>
+        <button class="nav-btn" onclick="switchTab('kmap', this)"><svg viewBox="0 0 24 24"><path d="M3,3H21V21H3V3M5,5V19H19V5H5M7,7H17V9H7V7M7,11H17V13H7V11M7,15H17V17H7V15Z"/></svg>Map</button>
+        <button class="nav-btn" onclick="switchTab('circuit', this)"><svg viewBox="0 0 24 24"><path d="M15,9A1,1 0 0,1 16,8A1,1 0 0,1 17,9A1,1 0 0,1 16,10A1,1 0 0,1 15,9M11,9A1,1 0 0,1 12,8A1,1 0 0,1 13,9A1,1 0 0,1 12,10A1,1 0 0,1 11,9M7,9A1,1 0 0,1 8,8A1,1 0 0,1 9,9A1,1 0 0,1 8,10A1,1 0 0,1 7,9M19,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 3,21H19A2,2 0 0,0 21,19V5A2,2 0 0,0 19,3M19,19H5V5H19V19Z"/></svg>Circ</button>
+        <button class="nav-btn" onclick="switchTab('calc', this)"><svg viewBox="0 0 24 24"><path d="M7,2H17A2,2 0 0,1 19,4V20A2,2 0 0,1 17,22H7A2,2 0 0,1 5,20V4A2,2 0 0,1 7,2M7,4V8H17V4H7M7,10V12H9V10H7M11,10V12H13V10H11M15,10V12H17V10H15M7,14V16H9V14H7M11,14V16H13V14H11M15,14V16H17V14H15M7,18V20H9V18H7M11,18V20H13V18H11M15,18V20H17V18H15Z"/></svg>Calc</button>
+        <button class="nav-btn" onclick="switchTab('chips', this)"><svg viewBox="0 0 24 24"><path d="M9,2H15V4H9V2M3,6H21V20H3V6M5,8V18H19V8H5M7,10H9V12H7V10M11,10H13V12H11V10M15,10H17V12H15V10Z"/></svg>Chip</button>
+        <button class="nav-btn" onclick="switchTab('manual', this)"><svg viewBox="0 0 24 24"><path d="M11,18H13V16H11V18M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,20C7.59,20 4,16.41 4,12C4,7.59 7.59,4 12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20M12,6A4,4 0 0,0 8,10H10A2,2 0 0,1 12,8A2,2 0 0,1 14,10C14,12 11,11.75 11,15H13C13,12.75 16,12.5 16,10A4,4 0 0,0 12,6Z"/></svg>Ajuda</button>
+    </nav>
+    
+    <!-- MODAL DE EXPORTAÇÃO EXPANDIDO -->
+    <div id="export-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <div class="modal-header-text">Tire um Print para Salvar - KMZ App</div>
+            <img id="modal-img" src="" />
+        </div>
+    </div>
+
+    <!-- MODAL INTERATIVO DO VOLT IA ATUALIZADO -->
+    <div id="support-modal" class="modal">
+        <div class="modal-content" style="max-width: 440px; height: auto; min-height: 380px; padding: 22px; border-radius: 16px; border-color: var(--primary);">
+            <span class="close-modal" onclick="closeSupportModal()">&times;</span>
+            
+            <div id="support-header" style="width:100%; text-align:left; border-bottom: 1px solid var(--border); padding-bottom:10px; margin-bottom:15px;">
+                <span style="color:var(--primary); font-weight:bold; font-size:1.2rem;">⚡ Volt IA - Triagem</span>
+            </div>
+
+            <!-- Fase 1: Entrada de Dados e Mensagem -->
+            <div id="support-step-1" style="width:100%;">
+                <p id="volt-bubble" style="color:var(--text-muted); font-size:0.95rem; margin-bottom:15px; line-height:1.5; background: rgba(255,255,255,0.02); padding: 12px; border-radius: 12px; border: 1px solid var(--border);">
+                    Olá! Eu sou o <strong>Volt</strong>. Identifiquei que você precisa de suporte. Por favor, informe seu e-mail e descreva o bug encontrado detalhadamente.
+                </p>
+                
+                <!-- Novo Campo: E-mail de Retorno -->
+                <input type="email" id="support-user-email" placeholder="Seu melhor e-mail para darmos o retorno..." style="width:100%; padding:12px; background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:12px; margin-bottom:12px; font-size:0.95rem;">
+                
+                <!-- Campo de Mensagem -->
+                <textarea id="support-message" placeholder="Descreva aqui o problem enfrentado no app..." style="width:100%; height:90px; padding:12px; background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:12px; resize:none; font-family:inherit; font-size:0.95rem;"></textarea>
+                
+                <div id="volt-inline-error" style="color: var(--danger); font-size: 0.85rem; margin-top: 5px; display: none;"></div>
+                <button class="btn" style="margin-top:12px;" onclick="sendSupportTicket()">Enviar para Suporte</button>
+            </div>
+
+            <!-- Fase 2: Loading Animado -->
+            <div id="support-step-2" class="hidden" style="text-align:center; padding:30px 0; width:100%;">
+                <div style="width:40px; height:40px; border:4px solid var(--primary); border-top-color:transparent; border-radius:50%; animation:spin 1s linear infinite; margin:0 auto 15px auto;"></div>
+                <p style="color:var(--text-muted); font-size:0.9rem;">Processando informações e gerando ticket...</p>
+            </div>
+
+            <!-- Fase 3: Ticket Criado -->
+            <div id="support-step-3" class="hidden" style="text-align:center; padding:10px 0; width:100%;">
+                <div style="color:var(--success); font-size:3rem; margin-bottom:10px;">✓</div>
+                <h3 style="color:var(--text); margin-bottom:5px;">Chamado Registrado!</h3>
+                <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:12px;">Seu número do ticket de atendimento:</p>
+                <div id="ticket-display" style="font-family:'Courier New', monospace; font-size:1.8rem; color:var(--accent); font-weight:bold; background:var(--bg); padding:10px; border-radius:8px; border:1px solid var(--border); display:inline-block; letter-spacing:1px; margin-bottom:15px;">#0000</div>
+                <p style="color:var(--text-muted); font-size:0.8rem; line-height:1.4;">
+                    Os detalhes caíram na caixa de <strong>kmzsuportt1@gmail.com</strong>. Fique de olho no seu e-mail!
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- CARREGAMENTO DOS MÓDULOS DE LÓGICA -->
+    <script src="js/core.js"></script>
+    <script src="js/simulator.js"></script>
+    <script src="js/calculator.js"></script>
+    <script src="js/truth-table.js"></script>
     <script src="js/kmap.js"></script>
-    <script src="js/table.js"></script>
-    <script src="js/math.js"></script>
-    <script src="js/volt-ia.js"></script>
-    <script src="js/app.js"></script>
+    <script src="js/circuit.js"></script>
+    <script src="js/chips.js"></script>
+    <script src="js/export.js"></script>
+    <script src="js/support.js"></script>
+    
+    <script>
+        // Gatilhos de Inicialização dos Módulos
+        updateGateLogic(); 
+        generateTruthTable(); 
+        initKMapGrid();
+    </script>
 </body>
 </html>
