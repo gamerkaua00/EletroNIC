@@ -10,6 +10,10 @@ function sendToCircuit(s) {
 function normalizeCircuitExpression(expr) {
     let clean = expr.toUpperCase().replace(/\s+/g, '');
     
+    // CORREÇÃO CRÍTICA: Elimina parênteses redundantes de variáveis únicas gerados pelo KMap (ex: (A)' vira A')
+    clean = clean.replace(/\(([A-D])\)'/g, "$1'");
+    clean = clean.replace(/\(([A-D])\)/g, "$1");
+    
     // Converte e unifica a lógica de aspas simples (') em inversor formal (!)
     while (clean.includes("'")) {
         const idx = clean.indexOf("'");
@@ -41,7 +45,7 @@ function normalizeCircuitExpression(expr) {
         }
     }
     
-    // Varre e remove invólucros como !(A), !(B) que o KMap gera e converte para !A, !B
+    // Varre e remove invólucros como !(A), !(B) residuais e converte para !A, !B
     clean = clean.replace(/!\(([A-D])\)/g, '!$1');
     return clean;
 }
@@ -180,7 +184,6 @@ function drawOrthogonalWire(ctx, x1, y1, x2, y2) {
     let midX = (x1 + x2) / 2; ctx.lineTo(midX, y1); ctx.lineTo(midX, y2); ctx.lineTo(x2, y2); ctx.stroke();
 }
 
-// ARQUITETURA GEOMÉTRICA DAS PORTAS: Garante os formatos industriais corretos e círculos de negação
 function drawGateSimple(ctx, type, x, y) {
     ctx.fillStyle = '#fff'; ctx.strokeStyle = '#000'; ctx.lineWidth = 2;
     if (type === 'AND' || type === 'NAND') {
