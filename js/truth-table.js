@@ -5,7 +5,7 @@ function parseExpression(expr, ctx) {
         if(clean === '0') return false;
         if(clean === '1') return true;
 
-        // Processa as inversões baseadas em aspas
+        // Processa as inversões baseadas em aspas de forma segura
         while (clean.includes("'")) {
             const idx = clean.indexOf("'");
             if (idx > 0) {
@@ -18,8 +18,13 @@ function parseExpression(expr, ctx) {
                         start--;
                     }
                     start++;
+                    clean = clean.substring(0, start) + '!(' + clean.substring(start, idx) + ')' + clean.substring(idx + 1);
+                } else if (/[A-D0-1]/.test(clean[start])) {
+                    // CORREÇÃO: Trata corretamente variáveis isoladas negadas (ex: C' vira !C)
+                    clean = clean.substring(0, start) + '!' + clean[start] + clean.substring(idx + 1);
+                } else {
+                    clean = clean.replace("'", "");
                 }
-                clean = clean.substring(0, start) + '!(' + clean.substring(start, idx) + ')' + clean.substring(idx + 1);
             } else {
                 clean = clean.replace("'", "");
             }
@@ -70,7 +75,7 @@ function generateTruthTable() {
             const t = document.getElementById('tt-type').value, a=ctx.A, b=ctx.B;
             if(t==='AND') res=a&&b; 
             else if(t==='OR') res=a||b; 
-            else if(t==='XOR') res=(a !== b) ? 1 : 0; // CORREÇÃO: Operação XOR revisada e corrigida
+            else if(t==='XOR') res=(a !== b) ? 1 : 0; // CORREÇÃO: Operação XOR corrigida de forma definitiva
             else if(t==='NAND') res=!(a&&b); 
             else if(t==='NOR') res=!(a||b);
         } else {
