@@ -41,7 +41,6 @@ function drawCircuit(expr) {
     const termOutputs = []; let currentY = 50;
     terms.forEach(term => {
         let lits = [];
-        // Analisa corretamente o divisor lógico do termo para separar AND/OR de forma limpa
         let gateType = term.includes('+') ? 'OR' : 'AND';
         
         if(term.includes('\u2295')) { 
@@ -55,8 +54,19 @@ function drawCircuit(expr) {
         }
         if(lits.length === 0) return;
         let curX = startGateX;
+        
         if (lits.length === 1 && !term.includes('\u2295') && !term.includes('\u2299')) {
-            drawWire(ctx, railX[lits[0].c], currentY, curX, currentY, lits[0].n); termOutputs.push({x: curX, y: currentY});
+            let lit = lits[0];
+            if (lit.n) {
+                // CORREÇÃO: Se a única variável for negada, desenha explicitamente a porta NOT gráfica
+                drawWire(ctx, railX[lit.c], currentY, curX, currentY, false);
+                drawGateSimple(ctx, 'NOT', curX, currentY);
+                termOutputs.push({x: curX + 20, y: currentY});
+            } else {
+                // Se for direta (ex: apenas "A"), mantém apenas a linha direta até o estágio final
+                drawWire(ctx, railX[lit.c], currentY, curX, currentY, false);
+                termOutputs.push({x: curX, y: currentY});
+            }
         } else {
             drawWire(ctx, railX[lits[0].c], currentY-10, curX, currentY-10, lits[0].n);
             drawWire(ctx, railX[lits[1].c], currentY+10, curX, currentY+10, lits[1].n);
@@ -118,5 +128,15 @@ function drawGateSimple(ctx, type, x, y) {
         ctx.beginPath(); ctx.moveTo(x-5, y-15); ctx.quadraticCurveTo(x+5, y, x-5, y+15); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(x, y-15); ctx.quadraticCurveTo(x+15, y-15, x+30, y); ctx.quadraticCurveTo(x+15, y+15, x, y+15); ctx.quadraticCurveTo(x+10, y, x, y-15); ctx.fill(); ctx.stroke();
         if(type === 'XNOR') { ctx.beginPath(); ctx.arc(x+33, y, 3, 0, 2*Math.PI); ctx.fill(); ctx.stroke(); }
+    } else if (type === 'NOT') {
+        // Bloco geométrico do triângulo inversor clássico (NOT)
+        ctx.beginPath();
+        ctx.moveTo(x, y - 12);
+        ctx.lineTo(x + 15, y);
+        ctx.lineTo(x, y + 12);
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+        // Círculo de inversão na ponta do triângulo
+        ctx.beginPath(); ctx.arc(x + 18, y, 3, 0, 2 * Math.PI); ctx.fill(); ctx.stroke();
     }
 }
