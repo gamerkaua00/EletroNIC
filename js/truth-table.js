@@ -5,13 +5,13 @@ function parseExpression(expr, ctx) {
         if(clean === '0') return false;
         if(clean === '1') return true;
 
+        // Processa as inversões baseadas em aspas
         while (clean.includes("'")) {
             const idx = clean.indexOf("'");
             if (idx > 0) {
                 let start = idx - 1;
                 if (clean[start] === ')') {
-                    let depth = 1;
-                    start--;
+                    let depth = 1; start--;
                     while (start >= 0 && depth > 0) {
                         if (clean[start] === ')') depth++;
                         else if (clean[start] === '(') depth--;
@@ -24,6 +24,9 @@ function parseExpression(expr, ctx) {
                 clean = clean.replace("'", "");
             }
         }
+
+        // CORREÇÃO DE MULTIPLICAÇÃO IMPLÍCITA: Injeta '*' entre variáveis adjacentes ou negações encostadas (ex: A'B -> A'*B)
+        clean = clean.replace(/([A-D!)]+)(?=[A-D!(])/g, '$1*');
 
         const atom = "!?(?:[A-D]|[0-1]|\\([^)]+\\))";
         while(clean.includes('\u22BC')) clean = clean.replace(new RegExp(`(${atom})\u22BC(${atom})`), '!($1&&$2)');
@@ -63,9 +66,13 @@ function generateTruthTable() {
         }
         let res = 0;
         if(document.getElementById('tt-mode').value === 'simple') {
+            document.getElementById('expression-error').style.display = 'none'; // Limpa erros residuais
             const t = document.getElementById('tt-type').value, a=ctx.A, b=ctx.B;
-            if(t==='AND') res=a&&b; else if(t==='OR') res=a||b; else if(t==='XOR') res=(a?!b:b);
-            else if(t==='NAND') res=!(a&&b); else if(t==='NOR') res=!(a||b);
+            if(t==='AND') res=a&&b; 
+            else if(t==='OR') res=a||b; 
+            else if(t==='XOR') res=(a !== b) ? 1 : 0; // CORREÇÃO: Operação XOR revisada e corrigida
+            else if(t==='NAND') res=!(a&&b); 
+            else if(t==='NOR') res=!(a||b);
         } else {
             const er = parseExpression(expression, ctx);
             if(er===null) { document.getElementById('expression-error').style.display = 'block'; return; }
@@ -76,3 +83,12 @@ function generateTruthTable() {
     }
     html += `</tbody>`; table.innerHTML = html;
 }
+
+function toggleTableMode() {
+    const mode = document.getElementById('tt-mode').value;
+    document.getElementById('mode-simple-controls').classList.toggle('hidden', mode !== 'simple');
+    document.getElementById('mode-custom-controls').classList.toggle('hidden', mode !== 'custom');
+    if(mode === 'simple') generateTruthTable();
+}
+function ins(txt) { document.getElementById('custom-expression').value += txt; }
+function backspace() { const i = document.getElementById('custom-expression'); i.value = i.value.slice(0, -1); }
