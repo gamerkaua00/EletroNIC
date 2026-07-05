@@ -81,7 +81,6 @@ function drawCircuit(expr) {
             gateType = 'XNOR';
             term.split('\u2299').forEach(p => { const m = p.match(/([A-D])/); if(m) lits.push({c:m[1], n:p.includes('!')}); });
         } else {
-            // Mapeamento baseado no caractere de negação formalizado "!"
             ['A','B','C','D'].forEach(v => {
                 if (term.includes(v)) {
                     let isNegated = false;
@@ -90,7 +89,6 @@ function drawCircuit(expr) {
                     lits.push({ c: v, n: isNegated });
                 }
             });
-            // Reordena os literais baseados no barramento para o desenho não cruzar linhas à toa
             lits.sort((x, y) => railX[x.c] - railX[y.c]);
         }
         if(lits.length === 0) return;
@@ -99,6 +97,7 @@ function drawCircuit(expr) {
         if (lits.length === 1 && !term.includes('\u2295') && !term.includes('\u2299')) {
             let lit = lits[0];
             if (lit.n) {
+                // CORREÇÃO MESTRE: Força o desenho da porta NOT mesmo se for a única variável da expressão inteira
                 drawWire(ctx, railX[lit.c], currentY, curX, currentY, false);
                 drawGateSimple(ctx, 'NOT', curX, currentY);
                 termOutputs.push({x: curX + 20, y: currentY});
