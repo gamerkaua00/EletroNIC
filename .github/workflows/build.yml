@@ -1,41 +1,136 @@
-name: Build EletroNIC APK
+name: Build Android APK (EletroNIC KMZ)
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout do Código
-        uses: actions/checkout@v4
+      - name: Checkout Source Code
+        uses: actions/checkout@v3
 
-      - name: Configurar Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
           node-version: '18'
 
-      - name: Configurar Java JDK
-        uses: actions/setup-java@v4
+      - name: Setup Java
+        uses: actions/setup-java@v3
         with:
-          distribution: 'zulu'
-          java-version: '11'
+          distribution: 'temurin'
+          java-version: '17'
 
-      - name: Instalar Cordova e Dependências
+      - name: Install Minification Tools
+        run: npm install -g html-minifier-terser
+
+      - name: Install Cordova
+        run: npm install -g cordova
+
+      # --- DETECTOR DE VERSÃO ---
+      - name: Detect Android Build Tools
+        id: android_tools
         run: |
-          npm install -g cordova
-          npm install
+          BUILD_TOOLS_VERSION=$(ls $ANDROID_SDK_ROOT/build-tools/ | sort -V | tail -n 1)
+          echo "Ferramentas encontradas: $BUILD_TOOLS_VERSION"
+          echo "version=$BUILD_TOOLS_VERSION" >> $GITHUB_OUTPUT
 
-      - name: Configurar Plataforma Android e Compilar
+      - name: Create Cordova App
         run: |
-          cordova platform add android || true
-          cordova build android --debug
+          cordova create app com.kmz.eletronic "EletroNIC"
+          cd app
+          cordova platform add android
 
-      - name: Upload APK Temporário (Teste)
+      - name: Inject & Protect Source Code
+        run: |
+          echo "Preparando diretórios do Cordova..."
+          rm app/www/index.html
+          mkdir -p app/www/css app/www/js
+          
+          echo "Minificando e copiando folha de estilo (CSS)..."
+          if [ -f "css/style.css" ]; then
+            html-minifier-terser --minify-css true -o app/www/css/styles.css css/style.css
+          elif [ -f "css/styles.css" ]; then
+            html-minifier-terser --minify-css true -o app/www/css/styles.css css/styles.css
+          elif [ -f "style.css" ]; then
+            html-minifier-terser --minify-css true -o app/www/css/styles.css style.css
+          elif [ -f "styles.css" ]; then
+            html-minifier-terser --minify-css true -o app/www/css/styles.css styles.css
+          else
+            echo "⚠️ Arquivo CSS não encontrado, pulando minificação local..."
+          fi
+          
+          echo "Processando e protegendo lógica de controle (JS)..."
+          if [ -d "js" ]; then
+            for f in js/*.js; do
+              if [ -f "$f" ]; then
+                filename=$(basename "$f")
+                # Cria um envelope temporário de script para o html-minifier-terser processar o JS sem quebrar nos operadores lógicos
+                echo "<script>" > temp_js.html
+                cat "$f" >> temp_js.html
+                echo "</script>" >> temp_js.html
+                
+                html-minifier-terser --minify-js true temp_js.html -o temp_js_min.html
+                
+                # Extrai de volta apenas o código JS estritamente minificado e limpo
+                sed 's/<script>//g;s/<\/script>//g' temp_js_min.html > "app/www/js/$filename"
+                rm -f temp_js.html temp_js_min.html
+              fi
+            done
+          else
+            echo "⚠️ Pasta /js não encontrada, copiando arquivos da raiz..."
+            for f in *.js; do
+              if [ -f "$f" ]; then
+                cp "$f" "app/www/js/$f"
+              fi
+            done
+          fi
+          
+          echo "Estruturando e limpando marcação HTML de entrada..."
+          html-minifier-terser \
+            --collapse-whitespace \
+            --remove-comments \
+            --output app/www/index.html \
+            index.html
+          
+          echo "Configurando preferências visuais no config.xml..."
+          sed -i '/<\/widget>/i \    <preference name="ShowSplashScreen" value="false" />' app/config.xml
+          sed -i '/<\/widget>/i \    <preference name="SplashScreenDelay" value="0" />' app/config.xml
+          sed -i '/<\/widget>/i \    <preference name="FadeSplashScreen" value="false" />' app/config.xml
+          sed -i '/<\/widget>/i \    <preference name="BackgroundColor" value="0xff0f172a" />' app/config.xml
+          sed -i '/<\/widget>/i \    <preference name="AndroidWindowSplashScreenBackground" value="#0f172a" />' app/config.xml
+          
+          if [ -f "icon.png" ]; then
+            echo "Ícone personalizado encontrado! Configurando..."
+            cp icon.png app/www/icon.png
+            sed -i '/<\/widget>/i \    <icon src="www/icon.png" />' app/config.xml
+            sed -i '/<\/widget>/i \    <splash src="www/icon.png" />' app/config.xml
+            sed -i '/<\/widget>/i \    <preference name="AndroidWindowSplashScreenAnimatedIcon" value="www/icon.png" />' app/config.xml
+          fi
+
+      - name: Build APK (Release Version)
+        run: |
+          cd app
+          cordova build android --release -- --packageType=apk
+
+      # --- ASSINATURA CORRIGIDA ---
+      - name: Sign APK
+        id: sign_app
+        uses: ilharp/sign-android-release@v1
+        with:
+          releaseDir: app/platforms/android/app/build/outputs/apk/release
+          signingKey: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          keyAlias: ${{ secrets.ANDROID_KEY_ALIAS }}
+          keyStorePassword: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          keyPassword: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          buildToolsVersion: ${{ steps.android_tools.outputs.version }}
+        
+      # Upload do APK
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: EletroNIC-Build-Ref-${{ github.run_number }}
-          path: platforms/android/app/build/outputs/apk/debug/app-debug.apk[cite: 1]
-          retention-days: 3 # Deleta do Actions após 3 dias para proteger os 500 MB do repositório privado[cite: 1]
+          name: EletroNIC-KMZ-2026-Release
+          path: ${{ steps.sign_app.outputs.signedFile }}
