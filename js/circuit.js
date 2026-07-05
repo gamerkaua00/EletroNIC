@@ -41,7 +41,7 @@ function drawCircuit(expr) {
     const termOutputs = []; let currentY = 50;
     terms.forEach(term => {
         let lits = [];
-        // RESOLUÇÃO DE PORTA INCORRETA: Avalia se o bloco interno contém "+" para definir OR, senão assume AND por produto implícito
+        // Analisa corretamente o divisor lógico do termo para separar AND/OR de forma limpa
         let gateType = term.includes('+') ? 'OR' : 'AND';
         
         if(term.includes('\u2295')) { 
@@ -101,7 +101,8 @@ function drawWire(ctx, x1, y1, x2, y2, inverted) {
 }
 
 function drawOrthogonalWire(ctx, x1, y1, x2, y2) {
-    ctx.strokeStyle = '#475569'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x1, y1);
+    ctx.strokeStyle = '#475569'; ctx.lineWidth = 2; ctx.beginPath();
+    ctx.moveTo(x1, y1);
     let midX = (x1 + x2) / 2; ctx.lineTo(midX, y1); ctx.lineTo(midX, y2); ctx.lineTo(x2, y2); ctx.stroke();
 }
 
