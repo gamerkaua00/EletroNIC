@@ -93,7 +93,10 @@ function toggleTableMode() {
     const mode = document.getElementById('tt-mode').value;
     document.getElementById('mode-simple-controls').classList.toggle('hidden', mode !== 'simple');
     document.getElementById('mode-custom-controls').classList.toggle('hidden', mode !== 'custom');
+    document.getElementById('mode-build-controls').classList.toggle('hidden', mode !== 'build');
+    document.getElementById('shared-table-output').classList.toggle('hidden', mode === 'build');
     if(mode === 'simple') generateTruthTable();
+    if(mode === 'build') initBuildTable();
 }
 
 // --- TECLADO: posição de cursor, preview legível e validação em tempo real ---
@@ -244,4 +247,93 @@ function toggleHelpModal(show) {
     const overlay = document.getElementById('help-modal-overlay');
     if (!overlay) return;
     overlay.classList.toggle('hidden', !show);
+}
+
+// --- MODO "MONTAR TABELA": tabela verdade -> expressão calculada ---
+// Reaproveita diretamente o motor de minimização do Mapa K (kmapData/currentVars/solveKMap
+// em js/kmap.js), já que os dados de um mapa de Karnaugh são indexados exatamente como uma
+// tabela verdade (por minterm). Assim a Tabela e o Mapa K sempre ficam em sincronia.
+
+function initBuildTable() {
+    // Ao entrar no modo, mostra o estado atual compartilhado (não reseta), pra manter
+    // continuidade caso o usuário já tenha montado algo no Mapa K antes.
+    document.getElementById('build-vars').value = String(currentVars);
+    renderBuildTable();
+}
+
+function onBuildVarsChange() {
+    const n = document.getElementById('build-vars').value;
+    document.getElementById('kmap-vars').value = n;
+    initKMapGrid(); // reseta kmapData/currentVars e reconstroi a grade do Mapa K (mesmo escondida)
+    document.getElementById('build-equation-text').innerText = 'Y = 0';
+    renderBuildTable();
+}
+
+function renderBuildTable() {
+    const table = document.getElementById('build-table-display');
+    if (!table) return;
+    const varNames = ['A', 'B', 'C', 'D'].slice(0, currentVars);
+    let html = '<thead><tr>';
+    varNames.forEach(v => html += `<th>${v}</th>`);
+    html += '<th>S</th></tr></thead><tbody>';
+
+    const rows = 1 << currentVars;
+    for (let i = 0; i < rows; i++) {
+        html += '<tr>';
+        for (let b = 0; b < currentVars; b++) {
+            const bit = (i >> (currentVars - 1 - b)) & 1;
+            html += `<td>${bit}</td>`;
+        }
+        const val = kmapData[i];
+        const cls = val === 1 ? 'result-1' : (val === 2 ? 'result-x' : 'result-0');
+        const label = val === 2 ? 'X' : String(val);
+        html += `<td class="build-cell ${cls}" onclick="toggleBuildCell(${i})">${label}</td>`;
+        html += '</tr>';
+    }
+    html += '</tbody>';
+    table.innerHTML = html;
+}
+
+function toggleBuildCell(i) {
+    toggleCell(i); // função já existente em js/kmap.js: cicla 0 -> 1 -> X -> 0
+    renderBuildTable();
+}
+
+function fillBuildTable(value) {
+    const maxM = 1 << currentVars;
+    for (let i = 0; i < maxM; i++) {
+        kmapData[i] = value;
+        const el = document.getElementById('cell-' + i);
+        if (el) {
+            el.className = 'kmap-cell' + (value === 1 ? ' state-1' : ' state-0');
+            el.innerText = String(value);
+        }
+    }
+    renderBuildTable();
+}
+
+function clearBuildTable() {
+    initKMapGrid();
+    document.getElementById('build-equation-text').innerText = 'Y = 0';
+    renderBuildTable();
+}
+
+function calculateExpressionFromBuildTable() {
+    solveKMap(); // preenche kmap-equation-text e a variável global lastCalculatedEquation
+    const src = document.getElementById('kmap-equation-text');
+    document.getElementById('build-equation-text').innerHTML = src.innerHTML;
+}
+
+function openBuildTableInKMap() {
+    // A grade do Mapa K já está sincronizada com a tabela (mesmo array kmapData/currentVars)
+    document.querySelectorAll('.nav-btn')[2].click();
+}
+
+function sendBuildTableToCircuit() {
+    let e = lastCalculatedEquation;
+    if (!e) e = '0';
+    if (e.startsWith('Y = ')) e = e.substring(4);
+    document.getElementById('circuit-expression-display').innerText = e;
+    document.querySelectorAll('.nav-btn')[3].click();
+    setTimeout(() => drawCircuit(e), 100);
 }

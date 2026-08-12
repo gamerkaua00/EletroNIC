@@ -83,9 +83,10 @@
             <div class="card">
                 <div class="flex-between" style="margin-bottom:10px;">
                     <label style="margin:0;">Tipo de Entrada</label>
-                    <select id="tt-mode" onchange="toggleTableMode()" style="width:140px; padding:8px; margin:0;">
+                    <select id="tt-mode" onchange="toggleTableMode()" style="width:170px; padding:8px; margin:0;">
                         <option value="simple">Porta Única</option>
                         <option value="custom">Expressão Livre</option>
+                        <option value="build">Montar Tabela</option>
                     </select>
                 </div>
 
@@ -148,7 +149,41 @@
                     <div id="expression-error" style="color:var(--danger); display:none; font-size:0.9rem; margin-top:10px; text-align:center; background:rgba(239, 68, 68, 0.1); padding:8px; border-radius:8px;">Expressão inválida! Confira parênteses e operadores.</div>
                 </div>
 
-                <!-- MODAL DE AJUDA DO TECLADO -->
+                <!-- MODO: MONTAR TABELA (tabela verdade -> expressão calculada) -->
+                <div id="mode-build-controls" class="hidden">
+                    <div class="flex-between" style="margin-bottom:10px;">
+                        <label style="margin:0;">Qtd. Variáveis</label>
+                        <select id="build-vars" onchange="onBuildVarsChange()" style="width:120px; padding:8px; margin:0;">
+                            <option value="4">4 (ABCD)</option>
+                            <option value="3">3 (ABC)</option>
+                            <option value="2">2 (AB)</option>
+                        </select>
+                    </div>
+
+                    <p class="build-hint">Toque na coluna <strong>S</strong> pra alternar entre 0, 1 e X (não importa).</p>
+
+                    <div class="btn-row">
+                        <button class="btn btn-outline" style="font-size:0.85rem;" onclick="fillBuildTable(0)">Tudo 0</button>
+                        <button class="btn btn-outline" style="font-size:0.85rem;" onclick="fillBuildTable(1)">Tudo 1</button>
+                        <button class="btn btn-danger" style="font-size:0.85rem;" onclick="clearBuildTable()">Limpar</button>
+                    </div>
+
+                    <div class="table-container" style="margin-top:16px;">
+                        <table class="truth-table" id="build-table-display"></table>
+                    </div>
+
+                    <button class="btn" style="margin-top:16px;" onclick="calculateExpressionFromBuildTable()">Calcular Expressão</button>
+
+                    <div style="margin-top:16px;">
+                        <span class="kb-group-label">Resultado</span>
+                        <div class="equation-box" id="build-equation-text">Y = 0</div>
+                    </div>
+
+                    <div class="btn-row">
+                        <button class="btn btn-outline" onclick="openBuildTableInKMap()">Ver no Mapa K</button>
+                        <button class="btn btn-outline" onclick="sendBuildTableToCircuit()">Ver Circuito</button>
+                    </div>
+                </div>
                 <div id="help-modal-overlay" class="help-modal-overlay hidden" onclick="if(event.target===this) toggleHelpModal(false)">
                     <div class="help-modal">
                         <div class="flex-between" style="margin-bottom:10px;">
@@ -170,11 +205,13 @@
                     </div>
                 </div>
 
-                <div class="table-container">
-                    <table class="truth-table" id="truth-table-display"></table>
+                <div id="shared-table-output">
+                    <div class="table-container">
+                        <table class="truth-table" id="truth-table-display"></table>
+                    </div>
+                    
+                    <button class="btn btn-outline" style="margin-top:10px; font-size:0.9rem;" onclick="exportTableImage()">📷 Visualizar p/ Print</button>
                 </div>
-                
-                <button class="btn btn-outline" style="margin-top:10px; font-size:0.9rem;" onclick="exportTableImage()">📷 Visualizar p/ Print</button>
             </div>
         </section>
 
