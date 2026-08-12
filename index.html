@@ -219,7 +219,11 @@
                 <div class="canvas-container">
                     <canvas id="circuit-canvas"></canvas>
                 </div>
-                <button class="btn btn-outline" style="margin-top:15px;" onclick="exportCircuitImage()">📷 Visualizar p/ Print</button>
+                <div class="btn-row" style="margin-top:15px;">
+                    <button class="btn btn-outline" onclick="sendCircuitToTable()">Ver Tabela Verdade</button>
+                    <button class="btn btn-outline" onclick="sendCircuitToKMap()">Ver Mapa K</button>
+                </div>
+                <button class="btn btn-outline" style="margin-top:10px;" onclick="exportCircuitImage()">📷 Visualizar p/ Print</button>
                 <p style="font-size:0.75rem; color:var(--text-muted); margin-top:10px; text-align:center;">
                     <span style="display:inline-block; width:8px; height:8px; background:var(--primary); border-radius:50%;"></span> Conexão &nbsp;
                     <span style="display:inline-block; width:8px; height:8px; background:#fff; border:1px solid #000; border-radius:50%;"></span> Inversor

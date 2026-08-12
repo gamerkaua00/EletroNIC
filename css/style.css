@@ -535,7 +535,11 @@ input[readonly]:focus {
     background: #ffffff;
     touch-action: pan-x pan-y;
     display: flex;
-    justify-content: center;
+    /* "safe center" evita que o navegador centralize conteúdo mais largo que a tela
+       de um jeito que deixa a ponta esquerda (ex: trilhos A/B/C do circuito) fora do
+       alcance do scroll. Se couber, continua centralizado; se não couber, alinha ao
+       início — igual ao comportamento que o usuário espera ao abrir a tela. */
+    justify-content: safe center;
     padding: 10px;
     min-height: 300px;
 }

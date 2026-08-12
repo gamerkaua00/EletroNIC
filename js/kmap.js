@@ -221,8 +221,9 @@ function safeXorDetection(terms) {
 }
 
 // --- INTERGRAÇÃO ---
-function sendToKMap() {
-    const expr = document.getElementById('custom-expression').value; if(!expr) return;
+function sendToKMap(exprOverride) {
+    const expr = exprOverride !== undefined ? exprOverride : document.getElementById('custom-expression').value;
+    if(!expr) return;
     const targetVars = expr.includes('D')?4:expr.includes('C')?3:2;
     document.getElementById('kmap-vars').value = targetVars; initKMapGrid();
     for(let i=0; i<(1<<targetVars); i++) {

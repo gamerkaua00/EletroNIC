@@ -6,6 +6,29 @@ function sendToCircuit(s) {
     document.querySelectorAll('.nav-btn')[3].click(); setTimeout(()=>drawCircuit(e), 100);
 }
 
+// Leva a expressão que está sendo exibida no Diagrama Lógico de volta para a Tabela Verdade,
+// para fechar o ciclo Tabela <-> Mapa K <-> Circuito nos dois sentidos.
+function sendCircuitToTable() {
+    const expr = document.getElementById('circuit-expression-display').innerText;
+    if (!expr || expr === '0' || expr === '1') return;
+
+    document.getElementById('tt-mode').value = 'custom';
+    toggleTableMode();
+    const input = document.getElementById('custom-expression');
+    input.value = expr;
+    if (typeof onExpressionChanged === 'function') onExpressionChanged();
+    document.querySelectorAll('.nav-btn')[1].click();
+    generateTruthTable();
+}
+
+// Leva a expressão do Diagrama Lógico direto para o Mapa de Karnaugh, reutilizando
+// a mesma função sendToKMap (agora aceitando uma expressão explícita como parâmetro).
+function sendCircuitToKMap() {
+    const expr = document.getElementById('circuit-expression-display').innerText;
+    if (!expr || expr === '0' || expr === '1') return;
+    sendToKMap(expr);
+}
+
 function normalizeCircuitExpression(expr) {
     let clean = expr.toUpperCase().replace(/\s+/g, '');
     
