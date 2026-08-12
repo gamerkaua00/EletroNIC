@@ -122,6 +122,16 @@ function drawCircuit(expr) {
         } else if(term.includes('\u2299')) {
             localGateType = 'XNOR';
             term.split('\u2299').forEach(p => { const m = p.match(/([A-D])/); if(m) lits.push({c:m[1], n:p.includes('!')}); });
+        } else if(term.includes('\u22BC')) {
+            // FIX: NAND (⊼) não era tratado e caía no ramo padrão, sendo desenhado
+            // como uma porta AND comum (sem a bolinha de inversão) — gerando um
+            // circuito com lógica invertida em relação ao que o usuário pediu.
+            localGateType = 'NAND';
+            term.split('\u22BC').forEach(p => { const m = p.match(/([A-D])/); if(m) lits.push({c:m[1], n:p.includes('!')}); });
+        } else if(term.includes('\u22BD')) {
+            // FIX: mesmo problema do NAND, mas para NOR (⊽).
+            localGateType = 'NOR';
+            term.split('\u22BD').forEach(p => { const m = p.match(/([A-D])/); if(m) lits.push({c:m[1], n:p.includes('!')}); });
         } else {
             ['A','B','C','D'].forEach(v => {
                 if (term.includes(v)) {
