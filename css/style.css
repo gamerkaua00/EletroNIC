@@ -308,6 +308,15 @@ input[readonly]:focus {
     font-size: 0.9rem;
     min-height: 1.4em;
 }
+.expr-struct-hint {
+    margin-top: 6px;
+    padding: 8px 12px;
+    background: rgba(245, 158, 11, 0.12);
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    border-radius: 8px;
+    color: #fcd34d;
+    font-size: 0.82rem;
+}
 
 /* --- VALIDAÇÃO EM TEMPO REAL DO CAMPO --- */
 #custom-expression.expr-valid { border-color: var(--success); }

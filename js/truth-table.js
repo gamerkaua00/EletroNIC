@@ -142,7 +142,7 @@ function expressionToReadable(expr) {
         .replace(/\u22BD/g, ' NOR ')
         .replace(/\+/g, ' OU ')
         .replace(/\*/g, ' E ')
-        .replace(/!/g, 'NÃO ')
+        .replace(/!/g, ' NÃO ')
         .replace(/\s+/g, ' ')
         .trim();
     return out;
@@ -158,19 +158,80 @@ function isLikelyBalanced(expr) {
     return depth === 0;
 }
 
+// Detecta posicionamento inválido de operadores em tempo real (ex: variável seguida de NÃO,
+// dois operadores binários seguidos, operador logo após "(" etc), sem precisar rodar o parser inteiro.
+// Retorna null se não encontrar problema óbvio, ou uma mensagem explicando o problema.
+function findStructuralError(expr) {
+    const INFIX = new Set(['+', '*', '\u2295', '\u2299', '\u22BC', '\u22BD']);
+    const ATOM = new Set(['A', 'B', 'C', 'D', '0', '1']);
+    const clean = expr.toUpperCase().replace(/\s+/g, '');
+    if (!clean) return null;
+
+    const classify = (ch) => {
+        if (ATOM.has(ch)) return 'ATOM';
+        if (ch === '!') return 'NOT';
+        if (INFIX.has(ch)) return 'INFIX';
+        if (ch === '(') return 'LP';
+        if (ch === ')') return 'RP';
+        return null; // apóstrofo antigo ou caractere desconhecido: não avaliar aqui
+    };
+
+    const allowedAfter = {
+        START: new Set(['ATOM', 'NOT', 'LP']),
+        LP:    new Set(['ATOM', 'NOT', 'LP']),
+        NOT:   new Set(['ATOM', 'NOT', 'LP']),
+        INFIX: new Set(['ATOM', 'NOT', 'LP']),
+        ATOM:  new Set(['INFIX', 'RP', 'ATOM', 'LP']),
+        RP:    new Set(['INFIX', 'RP', 'ATOM', 'LP']),
+    };
+
+    let prev = 'START';
+    for (const ch of clean) {
+        const kind = classify(ch);
+        if (kind === null) continue; // ignora apóstrofo (compat) e afins
+        if (!allowedAfter[prev] || !allowedAfter[prev].has(kind)) {
+            if (prev === 'ATOM' && kind === 'NOT') return 'NÃO precisa vir antes de uma variável, não depois.';
+            if (prev === 'INFIX' && kind === 'INFIX') return 'Dois operadores seguidos sem uma variável entre eles.';
+            if (prev === 'LP' && kind === 'INFIX') return 'Operador logo após "(" — falta uma variável antes.';
+            if (kind === 'RP' && (prev === 'NOT' || prev === 'INFIX' || prev === 'LP')) return 'Fechando ")" sem uma variável antes.';
+            return 'Posição inválida de operador na expressão.';
+        }
+        prev = kind;
+    }
+    if (prev === 'NOT' || prev === 'INFIX' || prev === 'LP') return 'A expressão não pode terminar em operador ou "(".';
+    return null;
+}
+
 function onExpressionChanged() {
     const i = document.getElementById('custom-expression');
     const preview = document.getElementById('expression-preview');
     if (preview) preview.textContent = expressionToReadable(i.value);
 
     const errorBox = document.getElementById('expression-error');
-    if (errorBox) errorBox.style.display = 'none';
+    const structHint = document.getElementById('expression-struct-hint');
 
     if (i.value.trim() === '') {
         i.classList.remove('expr-valid', 'expr-invalid');
+        if (errorBox) errorBox.style.display = 'none';
+        if (structHint) structHint.style.display = 'none';
         return;
     }
-    if (isLikelyBalanced(i.value)) {
+
+    const structError = findStructuralError(i.value);
+    const balanced = isLikelyBalanced(i.value);
+
+    if (errorBox) errorBox.style.display = 'none'; // erro do "Criar Tabela" some ao editar de novo
+
+    if (structHint) {
+        if (structError) {
+            structHint.textContent = '⚠ ' + structError;
+            structHint.style.display = 'block';
+        } else {
+            structHint.style.display = 'none';
+        }
+    }
+
+    if (balanced && !structError) {
         i.classList.add('expr-valid');
         i.classList.remove('expr-invalid');
     } else {
