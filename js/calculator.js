@@ -26,8 +26,14 @@ function calcUniversal() {
     const valA = parseAnyBase(document.getElementById('calc-a').value, baseA), valB = parseAnyBase(document.getElementById('calc-b').value, baseB);
     if(isNaN(valA) || isNaN(valB)) return;
     const op = document.getElementById('calc-op').value;
-    let res = (op === '+') ? valA+valB : (op === '-') ? valA-valB : (op === '*') ? valA*valB : (valB!==0?valA/valB:0);
     document.getElementById('calc-results').style.display = 'block';
+    // FIX: divisão por zero antes retornava 0 silenciosamente, fazendo parecer
+    // que essa era a resposta real. Agora mostramos um erro explícito.
+    if (op === '/' && valB === 0) {
+        ['res-dec','res-bin','res-oct','res-hex'].forEach(id => document.getElementById(id).innerText = 'Erro: ÷0');
+        return;
+    }
+    let res = (op === '+') ? valA+valB : (op === '-') ? valA-valB : (op === '*') ? valA*valB : valA/valB;
     document.getElementById('res-dec').innerText = formatAnyBase(res, 10);
     document.getElementById('res-bin').innerText = formatAnyBase(res, 2);
     document.getElementById('res-oct').innerText = formatAnyBase(res, 8);
