@@ -191,9 +191,16 @@ function safeXorDetection(terms) {
     while(changed) {
         changed = false; let nextTerms = []; let usedIndices = new Set();
         for (let i = 0; i < currentTerms.length; i++) {
-            if (usedIndices.has(i)) continue; let merged = false;
+            if (usedIndices.has(i)) continue;
+            // FIX: um termo que já contém um grupo (X⊕Y)/(X⊙Y) não pode ser
+            // re-analisado por parseTerm (que só entende literais simples A/B/C/D).
+            // Sem essa guarda, uma segunda passada de fusão gerava equações que
+            // não cobriam todos os minterms originais (bug de correção lógica).
+            if (currentTerms[i].includes('(')) { nextTerms.push(currentTerms[i]); continue; }
+            let merged = false;
             for (let j = i + 1; j < currentTerms.length; j++) {
                 if (usedIndices.has(j)) continue;
+                if (currentTerms[j].includes('(')) continue;
                 const t1 = parseTerm(currentTerms[i]), t2 = parseTerm(currentTerms[j]);
                 const keys1 = Object.keys(t1).sort(), keys2 = Object.keys(t2).sort();
                 if (JSON.stringify(keys1) !== JSON.stringify(keys2)) continue;
