@@ -95,5 +95,92 @@ function toggleTableMode() {
     document.getElementById('mode-custom-controls').classList.toggle('hidden', mode !== 'custom');
     if(mode === 'simple') generateTruthTable();
 }
-function ins(txt) { document.getElementById('custom-expression').value += txt; }
-function backspace() { const i = document.getElementById('custom-expression'); i.value = i.value.slice(0, -1); }
+
+// --- TECLADO: posição de cursor, preview legível e validação em tempo real ---
+let ttCursorPos = null;
+
+function updateCursorPos() {
+    const i = document.getElementById('custom-expression');
+    // Inputs readonly ainda reportam selectionStart no toque/clique
+    ttCursorPos = (typeof i.selectionStart === 'number') ? i.selectionStart : i.value.length;
+}
+
+function ins(txt) {
+    const i = document.getElementById('custom-expression');
+    const pos = (ttCursorPos === null) ? i.value.length : ttCursorPos;
+    i.value = i.value.slice(0, pos) + txt + i.value.slice(pos);
+    ttCursorPos = pos + txt.length;
+    // Reaplica a posição do cursor visualmente quando suportado
+    try { i.setSelectionRange(ttCursorPos, ttCursorPos); } catch(e) {}
+    onExpressionChanged();
+}
+
+function backspace() {
+    const i = document.getElementById('custom-expression');
+    const pos = (ttCursorPos === null) ? i.value.length : ttCursorPos;
+    if (pos <= 0) return;
+    i.value = i.value.slice(0, pos - 1) + i.value.slice(pos);
+    ttCursorPos = pos - 1;
+    try { i.setSelectionRange(ttCursorPos, ttCursorPos); } catch(e) {}
+    onExpressionChanged();
+}
+
+function clearExpression() {
+    const i = document.getElementById('custom-expression');
+    i.value = '';
+    ttCursorPos = 0;
+    onExpressionChanged();
+}
+
+// Traduz os símbolos da expressão para um texto legível em português, ajudando iniciantes
+function expressionToReadable(expr) {
+    if (!expr || !expr.trim()) return "Toque nos botões para montar sua expressão";
+    let out = expr
+        .replace(/\u2295/g, ' XOR ')
+        .replace(/\u2299/g, ' XNOR ')
+        .replace(/\u22BC/g, ' NAND ')
+        .replace(/\u22BD/g, ' NOR ')
+        .replace(/\+/g, ' OU ')
+        .replace(/\*/g, ' E ')
+        .replace(/!/g, 'NÃO ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    return out;
+}
+
+// Checagem leve e em tempo real (parênteses balanceados) — o parser continua sendo a validação final
+function isLikelyBalanced(expr) {
+    let depth = 0;
+    for (const ch of expr) {
+        if (ch === '(') depth++;
+        else if (ch === ')') { depth--; if (depth < 0) return false; }
+    }
+    return depth === 0;
+}
+
+function onExpressionChanged() {
+    const i = document.getElementById('custom-expression');
+    const preview = document.getElementById('expression-preview');
+    if (preview) preview.textContent = expressionToReadable(i.value);
+
+    const errorBox = document.getElementById('expression-error');
+    if (errorBox) errorBox.style.display = 'none';
+
+    if (i.value.trim() === '') {
+        i.classList.remove('expr-valid', 'expr-invalid');
+        return;
+    }
+    if (isLikelyBalanced(i.value)) {
+        i.classList.add('expr-valid');
+        i.classList.remove('expr-invalid');
+    } else {
+        i.classList.add('expr-invalid');
+        i.classList.remove('expr-valid');
+    }
+}
+
+function toggleHelpModal(show) {
+    const overlay = document.getElementById('help-modal-overlay');
+    if (!overlay) return;
+    overlay.classList.toggle('hidden', !show);
+}

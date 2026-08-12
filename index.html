@@ -100,24 +100,73 @@
                 </div>
 
                 <div id="mode-custom-controls" class="hidden">
-                    <div style="display:flex; gap:8px;">
-                        <input type="text" id="custom-expression" placeholder="Use o teclado abaixo..." readonly style="margin:0;">
-                        <button class="btn btn-danger" style="width:auto; margin:0; padding:0 15px;" onclick="document.getElementById('custom-expression').value=''">Limpar</button>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <input type="text" id="custom-expression" placeholder="Toque nos botões abaixo..." readonly style="margin:0;" onclick="updateCursorPos()">
+                        <button class="btn-icon" title="Ajuda" onclick="toggleHelpModal(true)">?</button>
+                        <button class="btn btn-danger" style="width:auto; margin:0; padding:0 15px;" onclick="clearExpression()">Limpar</button>
                     </div>
-                    
-                    <div class="keyboard-grid">
-                        <button class="key-btn var" onclick="ins('A')">A</button><button class="key-btn var" onclick="ins('B')">B</button><button class="key-btn var" onclick="ins('C')">C</button><button class="key-btn var" onclick="ins('D')">D</button>
-                        <button class="key-btn op" onclick="ins('+')">OU</button><button class="key-btn op" onclick="ins('*')">E</button><button class="key-btn op" onclick="ins('\'')">NÃO</button><button class="key-btn del" onclick="backspace()">⌫</button>
-                        <button class="key-btn complex" onclick="ins('\u2295')">XOR</button><button class="key-btn complex" onclick="ins('\u2299')">XNOR</button><button class="key-btn complex" onclick="ins('\u22BC')">NAND</button><button class="key-btn complex" onclick="ins('\u22BD')">NOR</button>
-                        <button class="key-btn" onclick="ins('(')">(</button><button class="key-btn" onclick="ins(')')">)</button><div style="grid-column:span 2"></div>
+
+                    <div id="expression-preview" class="expr-preview">Toque nos botões para montar sua expressão</div>
+
+                    <div class="kb-group">
+                        <span class="kb-group-label">Variáveis</span>
+                        <div class="keyboard-grid kb-4col">
+                            <button class="key-btn var" onclick="ins('A')">A</button><button class="key-btn var" onclick="ins('B')">B</button><button class="key-btn var" onclick="ins('C')">C</button><button class="key-btn var" onclick="ins('D')">D</button>
+                        </div>
                     </div>
-                    
+
+                    <div class="kb-group">
+                        <span class="kb-group-label">Operadores Básicos</span>
+                        <div class="keyboard-grid kb-4col">
+                            <button class="key-btn op" onclick="ins('+')">OU<small>+</small></button>
+                            <button class="key-btn op" onclick="ins('*')">E<small>&middot;</small></button>
+                            <button class="key-btn op" onclick="ins('!')">NÃO<small>!A</small></button>
+                            <button class="key-btn del" onclick="backspace()">⌫ Apagar</button>
+                        </div>
+                    </div>
+
+                    <div class="kb-group">
+                        <span class="kb-group-label">Portas Especiais</span>
+                        <div class="keyboard-grid kb-4col">
+                            <button class="key-btn complex" onclick="ins('\u2295')">XOR</button><button class="key-btn complex" onclick="ins('\u2299')">XNOR</button><button class="key-btn complex" onclick="ins('\u22BC')">NAND</button><button class="key-btn complex" onclick="ins('\u22BD')">NOR</button>
+                        </div>
+                    </div>
+
+                    <div class="kb-group">
+                        <span class="kb-group-label">Agrupamento</span>
+                        <div class="keyboard-grid kb-4col">
+                            <button class="key-btn" onclick="ins('(')">( abrir</button><button class="key-btn" onclick="ins(')')">) fechar</button><div style="grid-column:span 2"></div>
+                        </div>
+                    </div>
+
                     <div class="btn-row">
                         <button class="btn" onclick="generateTruthTable()">Criar Tabela</button>
                         <button class="btn btn-outline" onclick="sendToKMap()">Enviar para Mapa K</button>
                     </div>
                     <button class="btn btn-success" style="margin-top:10px;" onclick="sendToCircuit('custom')">Ver Circuito</button>
-                    <div id="expression-error" style="color:var(--danger); display:none; font-size:0.9rem; margin-top:10px; text-align:center; background:rgba(239, 68, 68, 0.1); padding:8px; border-radius:8px;">Expressão inválida!</div>
+                    <div id="expression-error" style="color:var(--danger); display:none; font-size:0.9rem; margin-top:10px; text-align:center; background:rgba(239, 68, 68, 0.1); padding:8px; border-radius:8px;">Expressão inválida! Confira parênteses e operadores.</div>
+                </div>
+
+                <!-- MODAL DE AJUDA DO TECLADO -->
+                <div id="help-modal-overlay" class="help-modal-overlay hidden" onclick="if(event.target===this) toggleHelpModal(false)">
+                    <div class="help-modal">
+                        <div class="flex-between" style="margin-bottom:10px;">
+                            <h3 style="margin:0;">Como usar o teclado</h3>
+                            <button class="btn-icon" onclick="toggleHelpModal(false)">✕</button>
+                        </div>
+                        <ul class="help-list">
+                            <li><strong>A, B, C, D</strong> — variáveis de entrada</li>
+                            <li><strong>OU (+)</strong> — verdadeiro se A <em>ou</em> B for 1</li>
+                            <li><strong>E (·)</strong> — verdadeiro se A <em>e</em> B forem 1</li>
+                            <li><strong>NÃO (!)</strong> — inverte o valor. Toque em NÃO e depois na variável: <code>!A</code></li>
+                            <li><strong>XOR</strong> — verdadeiro só quando as entradas são diferentes</li>
+                            <li><strong>XNOR</strong> — verdadeiro só quando as entradas são iguais</li>
+                            <li><strong>NAND</strong> — o inverso do E</li>
+                            <li><strong>NOR</strong> — o inverso do OU</li>
+                            <li><strong>( )</strong> — agrupa partes da expressão, ex: <code>(A+B)*C</code></li>
+                        </ul>
+                        <p class="help-tip">Dica: toque no campo de expressão para posicionar o cursor antes de inserir um símbolo no meio.</p>
+                    </div>
                 </div>
 
                 <div class="table-container">
