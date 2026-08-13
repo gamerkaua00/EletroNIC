@@ -559,13 +559,17 @@ input[readonly]:focus {
     background: #ffffff;
     touch-action: pan-x pan-y;
     display: flex;
-    /* "safe center" evita que o navegador centralize conteúdo mais largo que a tela
-       de um jeito que deixa a ponta esquerda (ex: trilhos A/B/C do circuito) fora do
-       alcance do scroll. Se couber, continua centralizado; se não couber, alinha ao
-       início — igual ao comportamento que o usuário espera ao abrir a tela. */
-    justify-content: safe center;
+    justify-content: center;
     padding: 10px;
     min-height: 300px;
+}
+/* Só o Diagrama Lógico precisa do "safe center": esse desenho pode ficar bem mais largo
+   que a tela (4 variáveis com portas em cascata), e "center" comum deixava a ponta
+   esquerda (trilhos A/B/C) fora do alcance do scroll. O Chip (canvas de tamanho fixo)
+   não tem esse problema, então mantém o center simples de sempre — sem essa classe extra
+   ele nem muda de posição. */
+.canvas-container-wide {
+    justify-content: safe center;
 }
 
 /* --- MODAL (POPUP) --- */
