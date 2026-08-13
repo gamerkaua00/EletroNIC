@@ -250,21 +250,60 @@ function toggleHelpModal(show) {
 }
 
 // --- MODO "MONTAR TABELA": tabela verdade -> expressão calculada ---
-// Reaproveita diretamente o motor de minimização do Mapa K (kmapData/currentVars/solveKMap
-// em js/kmap.js), já que os dados de um mapa de Karnaugh são indexados exatamente como uma
-// tabela verdade (por minterm). Assim a Tabela e o Mapa K sempre ficam em sincronia.
+// Reaproveita o motor de minimização do Mapa K (kmapData/currentVars/solveKMap em js/kmap.js).
+//
+// Cada linha da tabela guarda seus próprios valores de A, B, C, D e S, cada um podendo ser
+// 0, 1 ou X (não importa). Isso permite ao usuário "comprimir" a tabela: marcar X numa
+// entrada faz aquela linha valer para as duas possibilidades daquele bit (ex: linha "1 X 0"
+// com 2 variáveis cobre tanto "1 0 0" quanto "1 1 0"). Quando a expressão é calculada, cada
+// linha é expandida para os minterms que ela cobre; se duas linhas cobrirem o mesmo minterm,
+// a que aparece primeiro na tabela tem prioridade (de cima pra baixo).
+let buildRows = [];
+
+function makeCanonicalBuildRows(n, sValues) {
+    const varNames = ['A', 'B', 'C', 'D'].slice(0, n);
+    const rows = [];
+    for (let i = 0; i < (1 << n); i++) {
+        const row = { S: sValues ? sValues[i] : 0 };
+        for (let b = 0; b < n; b++) {
+            row[varNames[b]] = (i >> (n - 1 - b)) & 1;
+        }
+        rows.push(row);
+    }
+    return rows;
+}
+
+// Expande uma linha (que pode ter X em alguma entrada) na lista de minterms que ela cobre.
+function expandRowToMinterms(row, n) {
+    const varNames = ['A', 'B', 'C', 'D'].slice(0, n);
+    let minterms = [0];
+    for (let b = 0; b < n; b++) {
+        const v = row[varNames[b]];
+        const next = [];
+        for (const m of minterms) {
+            if (v === 0) next.push((m << 1) | 0);
+            else if (v === 1) next.push((m << 1) | 1);
+            else { next.push((m << 1) | 0); next.push((m << 1) | 1); } // X = as duas opções
+        }
+        minterms = next;
+    }
+    return minterms;
+}
 
 function initBuildTable() {
-    // Ao entrar no modo, mostra o estado atual compartilhado (não reseta), pra manter
-    // continuidade caso o usuário já tenha montado algo no Mapa K antes.
+    // Ao entrar no modo, parte do estado atual do Mapa K (S de cada minterm), pra manter
+    // alguma continuidade caso o usuário já tenha montado algo por lá. As entradas (A-D)
+    // sempre começam no padrão canônico (sem X), já que o Mapa K não guarda esse detalhe.
     document.getElementById('build-vars').value = String(currentVars);
+    buildRows = makeCanonicalBuildRows(currentVars, kmapData);
     renderBuildTable();
 }
 
 function onBuildVarsChange() {
-    const n = document.getElementById('build-vars').value;
+    const n = parseInt(document.getElementById('build-vars').value, 10);
     document.getElementById('kmap-vars').value = n;
     initKMapGrid(); // reseta kmapData/currentVars e reconstroi a grade do Mapa K (mesmo escondida)
+    buildRows = makeCanonicalBuildRows(n);
     document.getElementById('build-equation-text').innerText = 'Y = 0';
     renderBuildTable();
 }
@@ -277,59 +316,82 @@ function renderBuildTable() {
     varNames.forEach(v => html += `<th>${v}</th>`);
     html += '<th>S</th></tr></thead><tbody>';
 
-    const rows = 1 << currentVars;
-    for (let i = 0; i < rows; i++) {
+    const cellClass = (val) => val === 1 ? 'result-1' : (val === 2 ? 'result-x' : 'result-0');
+    const cellLabel = (val) => val === 2 ? 'X' : String(val);
+
+    buildRows.forEach((row, i) => {
         html += '<tr>';
-        for (let b = 0; b < currentVars; b++) {
-            const bit = (i >> (currentVars - 1 - b)) & 1;
-            html += `<td>${bit}</td>`;
-        }
-        const val = kmapData[i];
-        const cls = val === 1 ? 'result-1' : (val === 2 ? 'result-x' : 'result-0');
-        const label = val === 2 ? 'X' : String(val);
-        html += `<td class="build-cell ${cls}" onclick="toggleBuildCell(${i})">${label}</td>`;
+        varNames.forEach(v => {
+            html += `<td class="build-cell ${cellClass(row[v])}" onclick="toggleBuildInputCell(${i}, '${v}')">${cellLabel(row[v])}</td>`;
+        });
+        html += `<td class="build-cell ${cellClass(row.S)}" onclick="toggleBuildOutputCell(${i})">${cellLabel(row.S)}</td>`;
         html += '</tr>';
-    }
+    });
     html += '</tbody>';
     table.innerHTML = html;
 }
 
-function toggleBuildCell(i) {
-    toggleCell(i); // função já existente em js/kmap.js: cicla 0 -> 1 -> X -> 0
+function toggleBuildInputCell(rowIdx, varName) {
+    const row = buildRows[rowIdx];
+    if (!row) return;
+    row[varName] = (row[varName] + 1) % 3; // 0 -> 1 -> X -> 0
+    renderBuildTable();
+}
+
+function toggleBuildOutputCell(rowIdx) {
+    const row = buildRows[rowIdx];
+    if (!row) return;
+    row.S = (row.S + 1) % 3; // 0 -> 1 -> X -> 0
     renderBuildTable();
 }
 
 function fillBuildTable(value) {
-    const maxM = 1 << currentVars;
-    for (let i = 0; i < maxM; i++) {
-        kmapData[i] = value;
-        const el = document.getElementById('cell-' + i);
-        if (el) {
-            el.className = 'kmap-cell' + (value === 1 ? ' state-1' : ' state-0');
-            el.innerText = String(value);
-        }
-    }
+    buildRows.forEach(row => { row.S = value; });
     renderBuildTable();
 }
 
 function clearBuildTable() {
     initKMapGrid();
+    buildRows = makeCanonicalBuildRows(currentVars);
     document.getElementById('build-equation-text').innerText = 'Y = 0';
     renderBuildTable();
 }
 
 function calculateExpressionFromBuildTable() {
+    const n = currentVars;
+    const maxM = 1 << n;
+    const result = new Array(maxM).fill(0);
+    const touched = new Array(maxM).fill(false);
+
+    // Prioridade de cima pra baixo: a primeira linha que alcançar um minterm decide o valor dele.
+    for (const row of buildRows) {
+        for (const m of expandRowToMinterms(row, n)) {
+            if (!touched[m]) { result[m] = row.S; touched[m] = true; }
+        }
+    }
+
+    kmapData = result;
+    // Mantém a grade do Mapa K sincronizada visualmente, mesmo que ela não esteja visível agora
+    for (let i = 0; i < maxM; i++) {
+        const el = document.getElementById('cell-' + i);
+        if (el) {
+            el.className = 'kmap-cell' + (result[i] === 1 ? ' state-1' : result[i] === 2 ? ' state-x' : ' state-0');
+            el.innerText = result[i] === 2 ? 'X' : String(result[i]);
+        }
+    }
+
     solveKMap(); // preenche kmap-equation-text e a variável global lastCalculatedEquation
     const src = document.getElementById('kmap-equation-text');
     document.getElementById('build-equation-text').innerHTML = src.innerHTML;
 }
 
 function openBuildTableInKMap() {
-    // A grade do Mapa K já está sincronizada com a tabela (mesmo array kmapData/currentVars)
+    calculateExpressionFromBuildTable(); // garante que o Mapa K reflita o que está na tabela agora
     document.querySelectorAll('.nav-btn')[2].click();
 }
 
 function sendBuildTableToCircuit() {
+    calculateExpressionFromBuildTable();
     let e = lastCalculatedEquation;
     if (!e) e = '0';
     if (e.startsWith('Y = ')) e = e.substring(4);
