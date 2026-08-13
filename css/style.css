@@ -712,3 +712,62 @@ details[open] summary { border-bottom: 1px solid var(--border); }
 
 /* Animação do Spinner do Volt IA */
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* --- HISTÓRICO LOCAL --- */
+.history-empty {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    text-align: center;
+    padding: 20px 10px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+}
+.history-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 10px;
+}
+.history-item-info { min-width: 0; flex: 1; }
+.history-item-badge {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 2px 8px;
+    border-radius: 6px;
+    margin-bottom: 6px;
+}
+.history-badge-table { color: #86efac; background: rgba(34, 197, 94, 0.15); }
+.history-badge-kmap { color: #f9a8d4; background: rgba(236, 72, 153, 0.15); }
+.history-badge-circuit { color: #93c5fd; background: rgba(59, 130, 246, 0.15); }
+.history-item-expr {
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    color: var(--text);
+    font-size: 0.9rem;
+    word-break: break-word;
+}
+.history-item-date {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+.history-item-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex-shrink: 0;
+}
+.history-item-actions .btn-icon {
+    width: 34px;
+    height: 34px;
+    font-size: 0.9rem;
+}

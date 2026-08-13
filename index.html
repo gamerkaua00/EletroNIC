@@ -15,6 +15,8 @@
 
     <!-- SDK DO EMAILJS INTEGRADO -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <!-- SDK DO JSPDF (usado pela exportação em PDF da Tabela, Mapa K e Circuito) -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     <script type="text/javascript">
        (function(){
           emailjs.init("Kgh--G2bCKQhGtGc0");
@@ -146,6 +148,7 @@
                         <button class="btn btn-outline" onclick="sendToKMap()">Enviar para Mapa K</button>
                     </div>
                     <button class="btn btn-success" style="margin-top:10px;" onclick="sendToCircuit('custom')">Ver Circuito</button>
+                    <button class="btn btn-outline" style="margin-top:10px;" onclick="saveToHistory('table', document.getElementById('custom-expression').value)">💾 Salvar no Histórico</button>
                     <div id="expression-error" style="color:var(--danger); display:none; font-size:0.9rem; margin-top:10px; text-align:center; background:rgba(239, 68, 68, 0.1); padding:8px; border-radius:8px;">Expressão inválida! Confira parênteses e operadores.</div>
                 </div>
 
@@ -183,6 +186,11 @@
                         <button class="btn btn-outline" onclick="openBuildTableInKMap()">Ver no Mapa K</button>
                         <button class="btn btn-outline" onclick="sendBuildTableToCircuit()">Ver Circuito</button>
                     </div>
+                    <div class="btn-row" style="margin-top:10px;">
+                        <button class="btn btn-outline" style="font-size:0.9rem;" onclick="exportBuildTableImage()">📷 Print</button>
+                        <button class="btn btn-outline" style="font-size:0.9rem;" onclick="exportBuildTablePDF()">📄 PDF</button>
+                    </div>
+                    <button class="btn btn-outline" style="margin-top:10px;" onclick="calculateExpressionFromBuildTable(); saveToHistory('table', (lastCalculatedEquation || '0'))">💾 Salvar no Histórico</button>
                 </div>
                 <div id="help-modal-overlay" class="help-modal-overlay hidden" onclick="if(event.target===this) toggleHelpModal(false)">
                     <div class="help-modal">
@@ -210,7 +218,10 @@
                         <table class="truth-table" id="truth-table-display"></table>
                     </div>
                     
-                    <button class="btn btn-outline" style="margin-top:10px; font-size:0.9rem;" onclick="exportTableImage()">📷 Visualizar p/ Print</button>
+                    <div class="btn-row" style="margin-top:10px;">
+                        <button class="btn btn-outline" style="font-size:0.9rem;" onclick="exportTableImage()">📷 Visualizar p/ Print</button>
+                        <button class="btn btn-outline" style="font-size:0.9rem;" onclick="exportTablePDF()">📄 Exportar PDF</button>
+                    </div>
                 </div>
             </div>
         </section>
@@ -245,6 +256,11 @@
                     <button class="btn btn-outline" onclick="initKMapGrid()">Limpar Tudo</button>
                 </div>
                 <button class="btn" style="margin-top:10px;" onclick="sendToCircuit('kmap')">Criar Circuito</button>
+                <div class="btn-row" style="margin-top:10px;">
+                    <button class="btn btn-outline" style="font-size:0.9rem;" onclick="exportKMapImage()">📷 Visualizar p/ Print</button>
+                    <button class="btn btn-outline" style="font-size:0.9rem;" onclick="exportKMapPDF()">📄 Exportar PDF</button>
+                </div>
+                <button class="btn btn-outline" style="margin-top:10px;" onclick="saveToHistory('kmap', (lastCalculatedEquation || '0'))">💾 Salvar no Histórico</button>
             </div>
         </section>
 
@@ -260,7 +276,11 @@
                     <button class="btn btn-outline" onclick="sendCircuitToTable()">Ver Tabela Verdade</button>
                     <button class="btn btn-outline" onclick="sendCircuitToKMap()">Ver Mapa K</button>
                 </div>
-                <button class="btn btn-outline" style="margin-top:10px;" onclick="exportCircuitImage()">📷 Visualizar p/ Print</button>
+                <div class="btn-row" style="margin-top:10px;">
+                    <button class="btn btn-outline" style="font-size:0.9rem;" onclick="exportCircuitImage()">📷 Visualizar p/ Print</button>
+                    <button class="btn btn-outline" style="font-size:0.9rem;" onclick="exportCircuitPDF()">📄 Exportar PDF</button>
+                </div>
+                <button class="btn btn-outline" style="margin-top:10px;" onclick="saveToHistory('circuit', document.getElementById('circuit-expression-display').innerText)">💾 Salvar no Histórico</button>
                 <p style="font-size:0.75rem; color:var(--text-muted); margin-top:10px; text-align:center;">
                     <span style="display:inline-block; width:8px; height:8px; background:var(--primary); border-radius:50%;"></span> Conexão &nbsp;
                     <span style="display:inline-block; width:8px; height:8px; background:#fff; border:1px solid #000; border-radius:50%;"></span> Inversor
@@ -398,6 +418,17 @@
                 </details>
                 
                 <div style="margin-top:30px; padding-top:20px; border-top:1px solid var(--border);">
+                    <div class="flex-between" style="margin-bottom:15px;">
+                        <h3 style="color:var(--primary); margin:0;">Histórico</h3>
+                        <span style="font-size:0.85rem; color:var(--danger); cursor:pointer; font-weight:bold;" onclick="clearHistory()">Limpar Tudo</span>
+                    </div>
+                    <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:12px;">
+                        Expressões salvas na Tabela, no Mapa K ou no Circuito ficam guardadas aqui, só no seu aparelho. Nada é salvo automaticamente.
+                    </p>
+                    <div id="history-list"></div>
+                </div>
+
+                <div style="margin-top:30px; padding-top:20px; border-top:1px solid var(--border);">
                     <h3 style="color:var(--primary); margin-bottom:15px;">Suporte & Contato</h3>
                     <p style="color:var(--text-muted); margin-bottom:15px; font-size:0.9rem;">
                         Encontrou um bug ou tem uma sugestão? Entre em contato diretamente com o desenvolvedor:
@@ -493,6 +524,7 @@
     <script src="js/circuit.js"></script>
     <script src="js/chips.js"></script>
     <script src="js/export.js"></script>
+    <script src="js/history.js"></script>
     <script src="js/support.js"></script>
     
     <script>
@@ -500,6 +532,7 @@
         updateGateLogic(); 
         generateTruthTable(); 
         initKMapGrid();
+        renderHistoryList();
     </script>
 </body>
 </html>
