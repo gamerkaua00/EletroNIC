@@ -171,8 +171,17 @@ function exportKMapImage() {
 // canvas original), evitando o problema classico de "imagem quebrada" em PDF.
 function exportCanvasToPDF(canvas, title) {
     if (!canvas) return;
+    // Feedback imediato: dá pra saber na hora que o toque foi registrado, mesmo antes de
+    // qualquer geração/entrega de fato acontecer (ajuda a diferenciar "não reagiu ao toque"
+    // de "reagiu, mas a entrega falhou depois").
+    const btn = (typeof event !== 'undefined' && event && event.target) ? event.target.closest('button') : null;
+    let btnOriginalText = null;
+    if (btn) { btnOriginalText = btn.innerText; btn.innerText = 'Gerando PDF...'; }
+    const restoreBtn = () => { if (btn) setTimeout(() => { btn.innerText = btnOriginalText; }, 800); };
+
     if (!window.jspdf || !window.jspdf.jsPDF) {
         alert('Não foi possível carregar o gerador de PDF. Verifique sua conexão com a internet e tente novamente.');
+        restoreBtn();
         return;
     }
     const { jsPDF } = window.jspdf;
@@ -201,44 +210,61 @@ function exportCanvasToPDF(canvas, title) {
     doc.addImage(imgData, 'PNG', x, y, drawW, drawH);
 
     const safeName = title.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'eletronic';
-    deliverPDF(doc, safeName + '.pdf');
+    deliverPDF(doc, safeName + '.pdf')
+        .catch(err => {
+            // Rede de segurança extra: mesmo com o try/catch interno do deliverPDF, garante
+            // que nenhuma rejeição de Promise escape silenciosamente.
+            console.error('Erro inesperado ao entregar o PDF:', err);
+            alert('Ocorreu um erro inesperado ao gerar o PDF. Tente novamente.');
+        })
+        .finally(restoreBtn);
 }
 
 // O método doc.save() do jsPDF depende do mecanismo de download do navegador (um link
 // <a download> "clicado" via JS), que geralmente NÃO funciona dentro do WebView usado
 // pelo Cordova/Android — o toque acontece, mas nada é salvo e nada aparece pro usuário.
-// Por isso, priorizamos o menu de compartilhamento nativo do Android (Web Share API),
-// que é exatamente o "Abrir com o Google Drive?" que costuma aparecer nesse tipo de ação,
-// com fallbacks progressivos caso o aparelho/WebView não suporte.
+// Apps Cordova rodam com origem "file://", e isso faz a Web Share API e outras APIs de
+// navegador falharem *silenciosamente* nesse contexto (sem lançar erro visível), então
+// cada tentativa abaixo é protegida — e se TUDO falhar, o usuário sempre vê uma mensagem
+// explicando (nunca mais silêncio total, que é o pior cenário pra depurar).
 async function deliverPDF(doc, filename) {
-    const blob = doc.output('blob');
-
-    // 1) Tenta o menu de compartilhamento nativo do Android (funciona na maioria dos
-    // WebViews modernos, mesmo dentro de apps Cordova, pois é uma API do sistema).
-    if (typeof File !== 'undefined' && navigator.canShare) {
-        try {
-            const file = new File([blob], filename, { type: 'application/pdf' });
-            if (navigator.canShare({ files: [file] })) {
-                await navigator.share({ files: [file], title: filename });
-                return;
-            }
-        } catch (err) {
-            if (err && err.name === 'AbortError') return; // usuário cancelou o compartilhamento, tudo bem
-            console.error('Falha ao compartilhar PDF, tentando alternativa:', err);
-        }
-    }
-
-    // 2) Tenta abrir o PDF direto numa nova aba/visualizador do sistema
     try {
-        const blobUrl = URL.createObjectURL(blob);
-        const opened = window.open(blobUrl, '_blank');
-        if (opened) return;
-    } catch (err) {
-        console.error('Falha ao abrir o PDF numa nova aba:', err);
-    }
+        const blob = doc.output('blob');
 
-    // 3) Último recurso: tenta o download tradicional (pode não funcionar em todo WebView)
-    doc.save(filename);
+        // 1) Tenta o menu de compartilhamento nativo do Android (Web Share API). Quando
+        // funciona, é exatamente o "Abrir com o Google Drive?" que o usuário espera.
+        if (typeof File !== 'undefined' && navigator.canShare) {
+            try {
+                const file = new File([blob], filename, { type: 'application/pdf' });
+                if (navigator.canShare({ files: [file] })) {
+                    await navigator.share({ files: [file], title: filename });
+                    return;
+                }
+            } catch (err) {
+                if (err && err.name === 'AbortError') return; // usuário cancelou de propósito
+                console.error('Web Share falhou, tentando alternativa:', err);
+            }
+        }
+
+        // 2) Entrega a URL pro sistema operacional abrir (padrão nativo do Cordova, sem
+        // precisar de plugin extra). Usa uma data URI (autocontida) em vez de um blob URL,
+        // porque um blob: só existe dentro do próprio WebView e outros apps não conseguem
+        // abri-lo quando o Android tenta entregar pra um app de terceiros.
+        try {
+            const dataUri = doc.output('datauristring');
+            window.open(dataUri, '_system');
+            return;
+        } catch (err) {
+            console.error('Falha ao entregar o PDF pro sistema:', err);
+        }
+
+        // 3) Último recurso: tenta o download tradicional (pode não funcionar em todo WebView)
+        doc.save(filename);
+    } catch (err) {
+        // Se absolutamente tudo falhar, o usuário precisa saber - nunca falhar em silêncio.
+        console.error('Não foi possível entregar o PDF de nenhuma forma:', err);
+        alert('Não foi possível abrir ou compartilhar o PDF neste aparelho. Tente novamente ou verifique se há algum app de leitor de PDF instalado.');
+    }
 }
 
 function exportTablePDF() {
