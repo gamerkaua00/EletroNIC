@@ -113,8 +113,7 @@ function ins(txt) {
     const pos = (ttCursorPos === null) ? i.value.length : ttCursorPos;
     i.value = i.value.slice(0, pos) + txt + i.value.slice(pos);
     ttCursorPos = pos + txt.length;
-    // Reaplica a posição do cursor visualmente quando suportado
-    try { i.setSelectionRange(ttCursorPos, ttCursorPos); } catch(e) {}
+    ensureCursorVisible(i, ttCursorPos);
     onExpressionChanged();
 }
 
@@ -124,8 +123,23 @@ function backspace() {
     if (pos <= 0) return;
     i.value = i.value.slice(0, pos - 1) + i.value.slice(pos);
     ttCursorPos = pos - 1;
-    try { i.setSelectionRange(ttCursorPos, ttCursorPos); } catch(e) {}
+    ensureCursorVisible(i, ttCursorPos);
     onExpressionChanged();
+}
+
+// Garante que a posição do cursor fique visível no campo. Em alguns WebViews Android,
+// setSelectionRange sozinho não rola o campo até o cursor quando o toque veio de um
+// botão do teclado (e não do próprio input), deixando o texto digitado "escondido" fora
+// da área visível. Focar o input antes força esse comportamento; o fallback de scrollLeft
+// cobre o caso comum de estar digitando no final da expressão.
+function ensureCursorVisible(input, pos) {
+    try {
+        input.focus({ preventScroll: true });
+        input.setSelectionRange(pos, pos);
+    } catch (e) { /* segue pro fallback abaixo */ }
+    if (pos >= input.value.length) {
+        input.scrollLeft = input.scrollWidth;
+    }
 }
 
 function clearExpression() {

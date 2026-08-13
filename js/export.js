@@ -201,7 +201,44 @@ function exportCanvasToPDF(canvas, title) {
     doc.addImage(imgData, 'PNG', x, y, drawW, drawH);
 
     const safeName = title.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'eletronic';
-    doc.save(safeName + '.pdf');
+    deliverPDF(doc, safeName + '.pdf');
+}
+
+// O método doc.save() do jsPDF depende do mecanismo de download do navegador (um link
+// <a download> "clicado" via JS), que geralmente NÃO funciona dentro do WebView usado
+// pelo Cordova/Android — o toque acontece, mas nada é salvo e nada aparece pro usuário.
+// Por isso, priorizamos o menu de compartilhamento nativo do Android (Web Share API),
+// que é exatamente o "Abrir com o Google Drive?" que costuma aparecer nesse tipo de ação,
+// com fallbacks progressivos caso o aparelho/WebView não suporte.
+async function deliverPDF(doc, filename) {
+    const blob = doc.output('blob');
+
+    // 1) Tenta o menu de compartilhamento nativo do Android (funciona na maioria dos
+    // WebViews modernos, mesmo dentro de apps Cordova, pois é uma API do sistema).
+    if (typeof File !== 'undefined' && navigator.canShare) {
+        try {
+            const file = new File([blob], filename, { type: 'application/pdf' });
+            if (navigator.canShare({ files: [file] })) {
+                await navigator.share({ files: [file], title: filename });
+                return;
+            }
+        } catch (err) {
+            if (err && err.name === 'AbortError') return; // usuário cancelou o compartilhamento, tudo bem
+            console.error('Falha ao compartilhar PDF, tentando alternativa:', err);
+        }
+    }
+
+    // 2) Tenta abrir o PDF direto numa nova aba/visualizador do sistema
+    try {
+        const blobUrl = URL.createObjectURL(blob);
+        const opened = window.open(blobUrl, '_blank');
+        if (opened) return;
+    } catch (err) {
+        console.error('Falha ao abrir o PDF numa nova aba:', err);
+    }
+
+    // 3) Último recurso: tenta o download tradicional (pode não funcionar em todo WebView)
+    doc.save(filename);
 }
 
 function exportTablePDF() {
