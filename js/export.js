@@ -1,10 +1,8 @@
 // --- EXPORT FUNCTIONS (imagem e PDF) ---
-
-function exportCircuitImage() {
-    const canvas = document.getElementById('circuit-canvas');
-    const dataUrl = canvas.toDataURL("image/png");
-    showImageModal(dataUrl);
-}
+// As funções de "print" avulsas (exportCircuitImage, exportTableImage, etc.) foram
+// removidas daqui: o print agora só acontece automaticamente, como último recurso
+// dentro de deliverPDF(), quando o aparelho não consegue gerar/entregar o PDF de
+// nenhuma forma. Isso evita ter 2 botões fazendo praticamente a mesma coisa.
 
 // Desenha uma <table> (id informado) num canvas novo, com o mesmo estilo visual usado
 // no resto do app. Reaproveitada tanto pela tabela normal (Porta Única/Expressão Livre)
@@ -65,18 +63,6 @@ function buildTableCanvas(tableId) {
     ctx.strokeRect(padding, padding, width - (padding * 2), height - (padding * 2));
 
     return canvas;
-}
-
-function exportTableImage() {
-    const canvas = buildTableCanvas('truth-table-display');
-    if (!canvas) return;
-    showImageModal(canvas.toDataURL("image/png"));
-}
-
-function exportBuildTableImage() {
-    const canvas = buildTableCanvas('build-table-display');
-    if (!canvas) return;
-    showImageModal(canvas.toDataURL("image/png"));
 }
 
 // Desenha a grade do Mapa K (com as mesmas cores/posições da tela) num canvas novo,
@@ -157,12 +143,6 @@ function buildKMapCanvas() {
     ctx.fillText('Y = ' + (lastCalculatedEquation || '0'), width / 2, gridY + cellSize + gridH + padding);
 
     return canvas;
-}
-
-function exportKMapImage() {
-    const canvas = buildKMapCanvas();
-    if (!canvas) return;
-    showImageModal(canvas.toDataURL('image/png'));
 }
 
 // --- EXPORTAÇÃO EM PDF ---
