@@ -157,6 +157,46 @@ function buildKMapCanvas() {
     return canvas;
 }
 
+// Desenha a expressão (ex: "Y = A+B'C") como um cabeçalho no topo de um canvas já
+// existente, devolvendo um canvas NOVO e maior (cabeçalho + conteúdo original). A ideia é
+// bater com o que o Mapa K já fazia (a equação sempre aparece dentro da própria imagem),
+// aplicando o mesmo padrão pra Tabela e Circuito — isso garante que a expressão apareça
+// tanto no PDF de verdade quanto na imagem de fallback (que usa esse mesmo canvas).
+function addExpressionHeader(sourceCanvas, expression, theme) {
+    if (!sourceCanvas) return null;
+    if (!expression || expression === '0' || expression === '1') return sourceCanvas;
+
+    const colors = theme === 'light'
+        ? { bg: '#ffffff', text: '#1e293b' }
+        : { bg: '#020617', text: '#f59e0b' };
+
+    const dpr = window.devicePixelRatio || 1;
+    const srcWCss = sourceCanvas.width / dpr;
+    const srcHCss = sourceCanvas.height / dpr;
+    const headerHCss = 50;
+
+    const label = expression.startsWith('Y =') || expression.startsWith('Y=') ? expression : ('Y = ' + expression);
+
+    const combined = document.createElement('canvas');
+    combined.width = sourceCanvas.width;
+    combined.height = Math.round((srcHCss + headerHCss) * dpr);
+    const ctx = combined.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    ctx.fillStyle = colors.bg;
+    ctx.fillRect(0, 0, srcWCss, srcHCss + headerHCss);
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = 'bold 16px Courier New';
+    ctx.fillStyle = colors.text;
+    ctx.fillText(label, srcWCss / 2, headerHCss / 2, srcWCss - 20);
+
+    ctx.drawImage(sourceCanvas, 0, headerHCss, srcWCss, srcHCss);
+
+    return combined;
+}
+
 // --- EXPORTAÇÃO EM PDF ---
 // Usa a biblioteca jsPDF (carregada via CDN no index.html). Calcula a escala pra caber
 // a imagem inteira na página SEM esticar/distorcer (mesma proporção largura/altura do
@@ -311,12 +351,28 @@ async function deliverPDF(doc, filename, canvas) {
     }
 }
 
+// Descobre qual expressão está sendo mostrada no modo atual da Tabela Verdade (Porta
+// Única ou Expressão Livre), pra poder incluir na exportação.
+function currentSimpleOrCustomExpressionLabel() {
+    const mode = document.getElementById('tt-mode').value;
+    if (mode === 'custom') {
+        return document.getElementById('custom-expression').value;
+    }
+    const sel = document.getElementById('tt-type');
+    return sel.options[sel.selectedIndex].text; // ex: "A E B (AND)"
+}
+
 function exportTablePDF() {
-    exportCanvasToPDF(buildTableCanvas('truth-table-display'), 'Tabela Verdade - EletroNIC');
+    const raw = buildTableCanvas('truth-table-display');
+    const canvas = addExpressionHeader(raw, currentSimpleOrCustomExpressionLabel(), 'dark');
+    exportCanvasToPDF(canvas, 'Tabela Verdade - EletroNIC');
 }
 
 function exportBuildTablePDF() {
-    exportCanvasToPDF(buildTableCanvas('build-table-display'), 'Tabela Verdade - EletroNIC');
+    calculateExpressionFromBuildTable(); // garante que a expressao esteja atualizada
+    const raw = buildTableCanvas('build-table-display');
+    const canvas = addExpressionHeader(raw, lastCalculatedEquation, 'dark');
+    exportCanvasToPDF(canvas, 'Tabela Verdade - EletroNIC');
 }
 
 function exportKMapPDF() {
@@ -324,5 +380,8 @@ function exportKMapPDF() {
 }
 
 function exportCircuitPDF() {
-    exportCanvasToPDF(document.getElementById('circuit-canvas'), 'Diagrama Logico - EletroNIC');
+    const raw = document.getElementById('circuit-canvas');
+    const expr = document.getElementById('circuit-expression-display').innerText;
+    const canvas = addExpressionHeader(raw, expr, 'light');
+    exportCanvasToPDF(canvas, 'Diagrama Lógico - EletroNIC');
 }
