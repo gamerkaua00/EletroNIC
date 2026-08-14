@@ -44,6 +44,12 @@ jobs:
           cd app
           cordova platform add android
 
+      - name: Add Cordova Plugins
+        run: |
+          cd app
+          cordova plugin add cordova-plugin-file
+          cordova plugin add cordova-plugin-file-opener2
+
       - name: Inject & Protect Source Code
         run: |
           echo "Preparando diretórios do Cordova..."

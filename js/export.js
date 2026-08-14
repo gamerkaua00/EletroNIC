@@ -225,19 +225,65 @@ function exportCanvasToPDF(canvas, title) {
 // repassar a URL pro Android abrir noutro app (como pretendido), o próprio WebView do
 // app navegava para dentro da data URI gigante do PDF — e como o WebView não sabe
 // renderizar PDF, a tela ficava azul, em branco, e o app parecia travado. Por isso essa
-// função NUNCA mais deve chamar window.open()/navegação com o conteúdo do PDF: só usa
-// a Web Share API (que ou funciona corretamente via o SO, ou falha de forma segura e
-// detectável, sem navegar a página) e, se isso não for possível, cai para a visualização
-// em imagem já comprovadamente funcional (mesma usada em "Visualizar p/ Print").
+// função NUNCA MAIS deve chamar window.open()/navegação com o conteúdo do PDF.
+
+// Salva o blob como um arquivo de verdade no aparelho (via cordova-plugin-file) e abre
+// pelo leitor de PDF nativo do Android (via cordova-plugin-file-opener2), disparando o
+// mesmo menu "Abrir com..." do sistema. Esse caminho não depende de nenhuma API de
+// navegador (Web Share, download) — é uma ponte nativa do Cordova, mais confiável dentro
+// de um WebView. Rejeita a Promise (sem travar nada) se os plugins não estiverem
+// disponíveis, deixando a função chamadora cair pros próximos fallbacks.
+function saveAndOpenFileNative(blob, filename, mimeType) {
+    return new Promise((resolve, reject) => {
+        if (typeof cordova === 'undefined' || !cordova.file || !window.resolveLocalFileSystemURL) {
+            reject(new Error('cordova-plugin-file não disponível neste build/aparelho'));
+            return;
+        }
+        const targetDir = cordova.file.externalCacheDirectory || cordova.file.cacheDirectory;
+        if (!targetDir) {
+            reject(new Error('Nenhum diretório de armazenamento disponível'));
+            return;
+        }
+
+        window.resolveLocalFileSystemURL(targetDir, function (dirEntry) {
+            dirEntry.getFile(filename, { create: true, exclusive: false }, function (fileEntry) {
+                fileEntry.createWriter(function (writer) {
+                    writer.onwriteend = function () {
+                        if (typeof cordova.plugins === 'undefined' || !cordova.plugins.fileOpener2) {
+                            reject(new Error('cordova-plugin-file-opener2 não disponível'));
+                            return;
+                        }
+                        cordova.plugins.fileOpener2.open(fileEntry.nativeURL, mimeType, {
+                            success: resolve,
+                            error: reject
+                        });
+                    };
+                    writer.onerror = reject;
+                    writer.write(blob);
+                }, reject);
+            }, reject);
+        }, reject);
+    });
+}
+
 async function deliverPDF(doc, filename, canvas) {
     try {
         const blob = doc.output('blob');
 
-        // Único mecanismo automático tentado: o menu de compartilhamento nativo do Android
-        // (Web Share API). Quando funciona, é exatamente o "Abrir com o Google Drive?" que
-        // o usuário espera — e quando não funciona/não está disponível, falha de forma
-        // segura (lança uma exceção capturável ou simplesmente não está disponível),
-        // nunca navegando a página nem travando nada.
+        // 1) Tenta salvar o arquivo de verdade e abrir via Intent nativo do Android —
+        // caminho mais confiável dentro de um app Cordova (não depende de APIs de
+        // navegador que o WebView pode não suportar).
+        try {
+            await saveAndOpenFileNative(blob, filename, 'application/pdf');
+            return;
+        } catch (err) {
+            console.error('Salvar/abrir nativo falhou, tentando alternativa:', err);
+        }
+
+        // 2) Web Share API como segunda tentativa. Quando funciona, é exatamente o
+        // "Abrir com o Google Drive?" que o usuário espera — e quando não funciona/não
+        // está disponível, falha de forma segura (exceção capturável), nunca navegando
+        // a página nem travando nada.
         if (typeof File !== 'undefined' && navigator.canShare) {
             try {
                 const file = new File([blob], filename, { type: 'application/pdf' });
@@ -254,11 +300,10 @@ async function deliverPDF(doc, filename, canvas) {
         console.error('Falha ao gerar o PDF para compartilhamento:', err);
     }
 
-    // Não foi possível compartilhar o PDF automaticamente neste aparelho. Em vez de tentar
-    // mais truques de navegação (que já causaram uma tela travada antes), mostramos a
-    // mesma visualização em imagem que já funciona de forma confiável no app, avisando
-    // claramente o que aconteceu.
-    alert('Não foi possível compartilhar o PDF automaticamente neste aparelho. Mostrando como imagem — você pode tirar um print pra salvar.');
+    // Não foi possível salvar/compartilhar o PDF automaticamente neste aparelho. Em vez de
+    // tentar mais truques de navegação (que já causaram uma tela travada antes), mostramos
+    // a mesma visualização em imagem que já funciona de forma confiável no app.
+    alert('Não foi possível salvar/compartilhar o PDF automaticamente neste aparelho. Mostrando como imagem — você pode tirar um print pra salvar.');
     if (canvas && typeof showImageModal === 'function') {
         showImageModal(canvas.toDataURL('image/png'));
     }
