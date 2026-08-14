@@ -4,6 +4,18 @@
 // dentro de deliverPDF(), quando o aparelho não consegue gerar/entregar o PDF de
 // nenhuma forma. Isso evita ter 2 botões fazendo praticamente a mesma coisa.
 
+// Plugins nativos do Cordova (cordova.file, cordova.plugins.fileOpener2) só ficam
+// disponíveis depois do evento "deviceready". Na prática ele dispara muito cedo (bem
+// antes do usuário conseguir navegar até a tela de exportar), mas por segurança
+// registramos quando isso acontece, pra nunca tentar usar os plugins antes da hora.
+let __cordovaDeviceReady = false;
+if (typeof document !== 'undefined' && document.addEventListener) {
+    document.addEventListener('deviceready', function () {
+        __cordovaDeviceReady = true;
+        console.log('Cordova deviceready disparado - plugins nativos disponiveis.');
+    }, false);
+}
+
 // Desenha uma <table> (id informado) num canvas novo, com o mesmo estilo visual usado
 // no resto do app. Reaproveitada tanto pela tabela normal (Porta Única/Expressão Livre)
 // quanto pela tabela do modo "Montar Tabela" (que também tem células com X).
@@ -215,34 +227,44 @@ function exportCanvasToPDF(canvas, title) {
 // disponíveis, deixando a função chamadora cair pros próximos fallbacks.
 function saveAndOpenFileNative(blob, filename, mimeType) {
     return new Promise((resolve, reject) => {
-        if (typeof cordova === 'undefined' || !cordova.file || !window.resolveLocalFileSystemURL) {
-            reject(new Error('cordova-plugin-file não disponível neste build/aparelho'));
-            return;
-        }
-        const targetDir = cordova.file.externalCacheDirectory || cordova.file.cacheDirectory;
-        if (!targetDir) {
-            reject(new Error('Nenhum diretório de armazenamento disponível'));
-            return;
-        }
+        const attempt = () => {
+            if (typeof cordova === 'undefined' || !cordova.file || !window.resolveLocalFileSystemURL) {
+                reject(new Error('cordova-plugin-file não disponível neste build/aparelho'));
+                return;
+            }
+            const targetDir = cordova.file.externalCacheDirectory || cordova.file.cacheDirectory;
+            if (!targetDir) {
+                reject(new Error('Nenhum diretório de armazenamento disponível'));
+                return;
+            }
 
-        window.resolveLocalFileSystemURL(targetDir, function (dirEntry) {
-            dirEntry.getFile(filename, { create: true, exclusive: false }, function (fileEntry) {
-                fileEntry.createWriter(function (writer) {
-                    writer.onwriteend = function () {
-                        if (typeof cordova.plugins === 'undefined' || !cordova.plugins.fileOpener2) {
-                            reject(new Error('cordova-plugin-file-opener2 não disponível'));
-                            return;
-                        }
-                        cordova.plugins.fileOpener2.open(fileEntry.nativeURL, mimeType, {
-                            success: resolve,
-                            error: reject
-                        });
-                    };
-                    writer.onerror = reject;
-                    writer.write(blob);
+            window.resolveLocalFileSystemURL(targetDir, function (dirEntry) {
+                dirEntry.getFile(filename, { create: true, exclusive: false }, function (fileEntry) {
+                    fileEntry.createWriter(function (writer) {
+                        writer.onwriteend = function () {
+                            if (typeof cordova.plugins === 'undefined' || !cordova.plugins.fileOpener2) {
+                                reject(new Error('cordova-plugin-file-opener2 não disponível'));
+                                return;
+                            }
+                            cordova.plugins.fileOpener2.open(fileEntry.nativeURL, mimeType, {
+                                success: resolve,
+                                error: reject
+                            });
+                        };
+                        writer.onerror = reject;
+                        writer.write(blob);
+                    }, reject);
                 }, reject);
             }, reject);
-        }, reject);
+        };
+
+        // Se o deviceready ainda não disparou por algum motivo (ex: chamada muito cedo),
+        // dá uma pequena chance antes de desistir, em vez de rejeitar na hora.
+        if (__cordovaDeviceReady || typeof cordova !== 'undefined') {
+            attempt();
+        } else {
+            setTimeout(attempt, 1500);
+        }
     });
 }
 

@@ -510,6 +510,12 @@
     </div>
 
     <!-- CARREGAMENTO DOS MÓDULOS DE LÓGICA -->
+    <!-- PONTE DO CORDOVA: sem isso, window.cordova nunca existe, o evento "deviceready"
+         nunca dispara, e NENHUM plugin nativo funciona (mesmo instalado corretamente no
+         APK). Esse arquivo é gerado automaticamente pelo próprio "cordova build" e fica
+         disponível em tempo de execução — só precisa ser referenciado aqui. -->
+    <script src="cordova.js"></script>
+
     <script src="js/core.js"></script>
     <script src="js/simulator.js"></script>
     <script src="js/calculator.js"></script>

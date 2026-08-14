@@ -42,7 +42,7 @@ function sendSupportTicket() {
 
     // Análise Básica por palavras-chave
     if(txt.includes("circuito") || txt.includes("desenho") || txt.includes("canvas")) {
-        document.getElementById('volt-bubble').innerHTML = "⚡ <strong>Dica do Volt:</strong> Notei que seu problema envolve o Diagrama Lógico. Lembre-se que você pode usar o botão 'Visualizar p/ Print' para expandir o gráfico perfeitamente!";
+        document.getElementById('volt-bubble').innerHTML = "⚡ <strong>Dica do Volt:</strong> Notei que seu problema envolve o Diagrama Lógico. Lembre-se que você pode usar o botão 'Exportar PDF' para salvar ou compartilhar o circuito!";
     } else if(txt.includes("calculadora") || txt.includes("conversor") || txt.includes("base")) {
         document.getElementById('volt-bubble').innerHTML = "⚡ <strong>Dica do Volt:</strong> Identifiquei uma dúvida na Calculadora. Lembre-se que o campo filtra caracteres inválidos automaticamente de acordo com a base!";
     }
