@@ -1,0 +1,74 @@
+/* --- TABELA VERDADE (DARK NEON STYLE) --- */
+.table-container {
+    overflow-x: auto;
+    border-radius: 12px;
+    border: 1px solid #333;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    margin-top: 20px;
+}
+.truth-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+    text-align: center;
+    white-space: nowrap;
+    background-color: var(--table-bg);
+}
+.truth-table th {
+    background-color: #0f172a;
+    color: var(--primary);
+    padding: 15px;
+    font-weight: 800;
+    border-bottom: 2px solid var(--primary-dark);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+.truth-table td {
+    padding: 12px;
+    border-bottom: 1px solid #1e293b;
+    color: #64748b;
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+}
+.truth-table tr:last-child td {
+    border-bottom: none;
+}
+.truth-table tr:hover td {
+    background-color: rgba(255,255,255,0.03);
+}
+.truth-table td.result-1 {
+    color: var(--neon-green);
+    font-weight: 900;
+    font-size: 1.1rem;
+    text-shadow: 0 0 8px var(--neon-green), 0 0 15px rgba(0, 255, 157, 0.4);
+}
+.truth-table td.result-0 {
+    color: var(--neon-red);
+    font-weight: 900;
+    font-size: 1.1rem;
+    text-shadow: 0 0 8px var(--neon-red), 0 0 15px rgba(255, 51, 102, 0.4);
+}
+.truth-table td.result-x {
+    color: var(--accent);
+    font-weight: 900;
+    font-size: 1.1rem;
+    text-shadow: 0 0 8px var(--accent), 0 0 15px rgba(245, 158, 11, 0.4);
+}
+
+/* --- MODO "MONTAR TABELA" --- */
+.build-hint {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+    text-align: center;
+}
+.truth-table td.build-cell {
+    cursor: pointer;
+    -webkit-user-select: none;
+    user-select: none;
+    transition: transform 0.1s, background 0.15s;
+}
+.truth-table td.build-cell:active {
+    transform: scale(0.92);
+    background: rgba(255, 255, 255, 0.06);
+}

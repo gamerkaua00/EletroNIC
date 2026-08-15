@@ -1,0 +1,92 @@
+/* --- CANVAS --- */
+.canvas-container {
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: #ffffff;
+    touch-action: pan-x pan-y;
+    display: flex;
+    justify-content: center;
+    padding: 10px;
+    min-height: 300px;
+}
+/* Só o Diagrama Lógico precisa do "safe center": esse desenho pode ficar bem mais largo
+   que a tela (4 variáveis com portas em cascata), e "center" comum deixava a ponta
+   esquerda (trilhos A/B/C) fora do alcance do scroll. O Chip (canvas de tamanho fixo)
+   não tem esse problema, então mantém o center simples de sempre — sem essa classe extra
+   ele nem muda de posição. */
+.canvas-container-wide {
+    justify-content: safe center;
+}
+
+/* --- MODAL (POPUP) --- */
+.modal {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-color: rgba(0,0,0,0.95);
+    backdrop-filter: blur(8px);
+    z-index: 100;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+}
+.modal.visible {
+    opacity: 1;
+    pointer-events: all;
+}
+.modal-content {
+    background: #0f172a;
+    width: 98%;
+    height: 95%;
+    border-radius: 8px;
+    border: 2px solid var(--primary);
+    box-shadow: 0 0 30px rgba(0,0,0,0.8);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+.modal-content img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 4px;
+    background: #fff;
+}
+.modal-header-text {
+    color: var(--text);
+    font-weight: bold;
+    margin-bottom: 8px;
+    position: absolute;
+    top: 10px;
+    left: 15px;
+    background: rgba(0,0,0,0.6);
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+.close-modal {
+    position: absolute;
+    top: 5px;
+    right: 10px;
+    color: var(--danger);
+    font-size: 3rem;
+    cursor: pointer;
+    line-height: 0.8;
+    font-weight: 900;
+    z-index: 102;
+    background: rgba(0,0,0,0.5);
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.close-modal:active { transform: scale(0.9); background: rgba(255,255,255,0.2); }

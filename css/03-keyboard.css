@@ -1,0 +1,119 @@
+/* --- TECLADO VIRTUAL --- */
+.keyboard-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-top: 10px;
+}
+.key-btn {
+    background: var(--surface-light);
+    border: none;
+    color: var(--text);
+    padding: 14px 0;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: background 0.1s, transform 0.1s;
+}
+.key-btn:active {
+    background: var(--border);
+    transform: translateY(2px);
+}
+.key-btn.var { color: #86efac; background: rgba(34, 197, 94, 0.15); }
+.key-btn.op { color: #fcd34d; background: rgba(245, 158, 11, 0.15); }
+.key-btn.complex { font-size: 0.9rem; color: #f9a8d4; background: rgba(236, 72, 153, 0.15); }
+.key-btn.del { color: #fca5a5; background: rgba(239, 68, 68, 0.15); }
+.key-btn small { display:block; font-size: 0.65rem; font-weight: normal; opacity: 0.7; margin-top: 2px; }
+
+/* --- GRUPOS DO TECLADO (repaginado) --- */
+.kb-group { margin-top: 14px; }
+.kb-group-label {
+    display: block;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+}
+.kb-4col { grid-template-columns: repeat(4, 1fr); }
+
+/* --- PREVIEW DA EXPRESSÃO --- */
+.expr-preview {
+    margin-top: 10px;
+    padding: 10px 12px;
+    background: var(--surface);
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    min-height: 1.4em;
+}
+.expr-struct-hint {
+    margin-top: 6px;
+    padding: 8px 12px;
+    background: rgba(245, 158, 11, 0.12);
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    border-radius: 8px;
+    color: #fcd34d;
+    font-size: 0.82rem;
+}
+
+/* --- VALIDAÇÃO EM TEMPO REAL DO CAMPO --- */
+#custom-expression.expr-valid { border-color: var(--success); }
+#custom-expression.expr-invalid { border-color: var(--danger); }
+
+/* --- BOTÃO DE AJUDA --- */
+.btn-icon {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--surface-light);
+    color: var(--text);
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* --- MODAL DE AJUDA --- */
+.help-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+}
+.help-modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    max-width: 420px;
+    width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+.help-list {
+    margin: 0;
+    padding-left: 18px;
+    color: var(--text);
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+.help-list code {
+    background: var(--surface-light);
+    padding: 1px 6px;
+    border-radius: 4px;
+}
+.help-tip {
+    margin-top: 14px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}

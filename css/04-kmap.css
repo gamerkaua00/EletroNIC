@@ -1,0 +1,97 @@
+/* --- MAPA DE KARNAUGH --- */
+.kmap-wrapper {
+    overflow-x: auto;
+    padding: 10px 0;
+    display: flex;
+    justify-content: center;
+}
+.kmap-grid {
+    display: grid;
+    gap: 4px;
+    margin-bottom: 15px;
+    font-family: 'Courier New', monospace;
+    user-select: none;
+}
+.kmap-grid.vars-4 { grid-template-columns: 40px repeat(4, 50px); }
+.kmap-grid.vars-3 { grid-template-columns: 40px repeat(4, 50px); }
+.kmap-grid.vars-2 { grid-template-columns: 40px repeat(2, 50px); }
+.kmap-cell {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    height: 50px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.2rem;
+    font-weight: bold;
+    transition: all 0.2s;
+    position: relative; 
+}
+.kmap-cell.state-0 { color: var(--text-muted); opacity: 0.5; }
+.kmap-cell.state-1 { color: white; background: var(--primary); border-color: var(--primary-dark); box-shadow: 0 0 10px rgba(59, 130, 246, 0.4); }
+.kmap-cell.state-x { color: var(--bg); background: var(--accent); border-color: var(--accent); }
+
+.kmap-cell.educ-highlight {
+    border: 3px solid #f43f5e !important;
+    box-shadow: 0 0 20px #f43f5e;
+    z-index: 10;
+    transform: scale(1.1);
+}
+
+.kmap-header {
+    font-weight: bold;
+    color: var(--accent);
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.kmap-corner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+}
+
+.equation-box {
+    background: rgba(15, 23, 42, 0.5);
+    padding: 16px;
+    border-radius: 12px;
+    font-family: 'Courier New', monospace;
+    border: 1px solid var(--primary-dark);
+    color: var(--primary);
+    font-size: 1.1rem;
+    margin: 15px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 56px;
+    flex-wrap: wrap; 
+}
+.interactive-term {
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: all 0.2s;
+    border-bottom: 2px dashed var(--accent);
+    margin: 0 4px;
+}
+.interactive-term:hover, .interactive-term:active {
+    background: rgba(245, 158, 11, 0.2);
+    color: var(--accent);
+    transform: scale(1.05);
+}
+.equation-hint {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-align: center;
+    margin-top: -10px;
+    margin-bottom: 15px;
+    font-style: italic;
+}

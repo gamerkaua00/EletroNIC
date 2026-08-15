@@ -1,0 +1,6 @@
+/* --- CALCULADORA --- */
+.conv-row { display: flex; align-items: center; margin-bottom: 12px; gap: 12px; }
+.conv-label { width: 40px; font-weight: bold; color: var(--accent); font-size: 0.9rem; text-align: right; }
+.calc-input-group { display: flex; gap: 8px; margin-bottom: 12px; }
+.res-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 0.95rem; }
+.res-row span:last-child { font-family: 'Courier New', monospace; color: var(--success); font-weight: bold; }
