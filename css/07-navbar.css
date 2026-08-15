@@ -1,6 +1,6 @@
 /* --- NAVBAR --- */
 nav {
-    background: rgba(30, 41, 59, 0.95);
+    background: rgba(18, 21, 27, 0.92);
     backdrop-filter: blur(10px);
     border-top: 1px solid var(--border);
     display: flex;

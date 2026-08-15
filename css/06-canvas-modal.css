@@ -40,7 +40,7 @@
     pointer-events: all;
 }
 .modal-content {
-    background: #0f172a;
+    background: var(--bg);
     width: 98%;
     height: 95%;
     border-radius: 8px;

@@ -37,7 +37,7 @@ function buildTableCanvas(tableId) {
     const ctx = canvas.getContext("2d");
     ctx.scale(dpr, dpr);
 
-    ctx.fillStyle = "#020617";
+    ctx.fillStyle = "#020304";
     ctx.fillRect(0, 0, width, height);
 
     ctx.font = "bold 16px Courier New";
@@ -52,7 +52,7 @@ function buildTableCanvas(tableId) {
         ctx.beginPath();
         ctx.moveTo(padding, padding + (i * rowHeight));
         ctx.lineTo(width - padding, padding + (i * rowHeight));
-        ctx.strokeStyle = (i === 0 || i === 1) ? "#3b82f6" : "#1e293b";
+        ctx.strokeStyle = (i === 0 || i === 1) ? "#3b82f6" : "#232a35";
         ctx.stroke();
 
         for (let j = 0; j < row.cells.length; j++) {
@@ -60,18 +60,18 @@ function buildTableCanvas(tableId) {
             const x = padding + (j * colWidth) + (colWidth / 2);
 
             let color = "#94a3b8";
-            if (i === 0) color = "#f59e0b";
+            if (i === 0) color = "#d99a44";
             else {
                 if (cell.classList.contains("result-1")) color = "#00ff9d";
                 else if (cell.classList.contains("result-0")) color = "#ff3366";
-                else if (cell.classList.contains("result-x")) color = "#f59e0b";
+                else if (cell.classList.contains("result-x")) color = "#d99a44";
             }
 
             ctx.fillStyle = color;
             ctx.fillText(cell.innerText, x, y);
         }
     }
-    ctx.strokeStyle = "#334155";
+    ctx.strokeStyle = "#232a35";
     ctx.strokeRect(padding, padding, width - (padding * 2), height - (padding * 2));
 
     return canvas;
@@ -96,7 +96,7 @@ function buildKMapCanvas() {
     const ctx = canvas.getContext('2d');
     ctx.scale(dpr, dpr);
 
-    ctx.fillStyle = '#020617';
+    ctx.fillStyle = '#020304';
     ctx.fillRect(0, 0, width, height);
 
     ctx.textAlign = 'center';
@@ -117,7 +117,7 @@ function buildKMapCanvas() {
     const gridY = padding + titleH;
 
     ctx.font = 'bold 13px Courier New';
-    ctx.fillStyle = '#f59e0b';
+    ctx.fillStyle = '#d99a44';
     colLabels.forEach((label, c) => {
         ctx.fillText(label, gridX + c * cellSize + cellSize / 2, gridY + cellSize / 2);
     });
@@ -139,9 +139,9 @@ function buildKMapCanvas() {
             const cellY = gridY + cellSize + r * cellSize;
             const val = kmapData[minterm];
 
-            ctx.fillStyle = val === 1 ? '#3b82f6' : (val === 2 ? '#f59e0b' : '#0f172a');
+            ctx.fillStyle = val === 1 ? '#3b82f6' : (val === 2 ? '#d99a44' : '#12151b');
             ctx.fillRect(cellX + 2, cellY + 2, cellSize - 4, cellSize - 4);
-            ctx.strokeStyle = '#334155';
+            ctx.strokeStyle = '#232a35';
             ctx.strokeRect(cellX + 2, cellY + 2, cellSize - 4, cellSize - 4);
 
             ctx.fillStyle = val === 0 ? '#64748b' : '#ffffff';
@@ -150,7 +150,7 @@ function buildKMapCanvas() {
         }
     }
 
-    ctx.fillStyle = '#f59e0b';
+    ctx.fillStyle = '#d99a44';
     ctx.font = 'bold 16px Courier New';
     ctx.fillText('Y = ' + (lastCalculatedEquation || '0'), width / 2, gridY + cellSize + gridH + padding);
 
@@ -167,8 +167,8 @@ function addExpressionHeader(sourceCanvas, expression, theme) {
     if (!expression || expression === '0' || expression === '1') return sourceCanvas;
 
     const colors = theme === 'light'
-        ? { bg: '#ffffff', text: '#1e293b' }
-        : { bg: '#020617', text: '#f59e0b' };
+        ? { bg: '#ffffff', text: '#1c2129' }
+        : { bg: '#0a0c10', text: '#d99a44' };
 
     const dpr = window.devicePixelRatio || 1;
     const srcWCss = sourceCanvas.width / dpr;

@@ -2,21 +2,24 @@
     --primary: #3b82f6;
     --primary-dark: #2563eb;
     --primary-gradient: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-    --accent: #f59e0b;
-    --bg: #0f172a;
-    --surface: #1e293b;
-    --surface-light: #334155;
+    /* Acento "cobre de trilha de PCB" — antes um âmbar genérico de aviso, agora a cor de
+       assinatura do app: marca títulos de seção, destaques e pontos de solda visuais. */
+    --accent: #d99a44;
+    --accent-bright: #f0b268;
+    --bg: #0a0c10;
+    --surface: #12151b;
+    --surface-light: #1c2129;
     --text: #f1f5f9;
-    --text-muted: #94a3b8;
+    --text-muted: #8b93a1;
     --success: #10b981;
     --danger: #ef4444;
-    --border: #334155;
+    --border: #232a35;
     --radius: 16px;
-    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.15);
-    /* Cores Neon para a Tabela */
+    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+    /* Cores "LED" para a Tabela (resultado 1/0) */
     --neon-green: #00ff9d;
     --neon-red: #ff3366;
-    --table-bg: #020617; /* Preto bem profundo */
+    --table-bg: #020304; /* Preto bem profundo */
 }
 
 * {
@@ -43,6 +46,11 @@ input, textarea {
 
 body {
     background-color: var(--bg);
+    /* Leve profundidade no fundo, sem virar papel de parede - dois brilhos bem fracos
+       nos cantos opostos, quase imperceptíveis, só pra tirar a sensação de "cor chapada". */
+    background-image:
+        radial-gradient(circle at 12% 8%, rgba(217, 154, 68, 0.05), transparent 40%),
+        radial-gradient(circle at 88% 85%, rgba(59, 130, 246, 0.05), transparent 40%);
     color: var(--text);
     display: flex;
     flex-direction: column;
@@ -114,6 +122,7 @@ header {
     align-items: center;
     justify-content: center;
     gap: 10px;
+    position: relative;
 }
 header h1 {
     font-size: 1.25rem;
@@ -124,6 +133,18 @@ header h1 {
     letter-spacing: 0.5px;
     margin: 0;
     text-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+}
+/* Elemento de assinatura: uma "trilha" de cobre acesa sob o header, presente em toda
+   tela do app - a mesma ideia de uma trilha de PCB levando corrente, sutil e único. */
+header::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 20%;
+    right: 20%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent 0%, var(--accent) 20%, var(--accent-bright) 50%, var(--accent) 80%, transparent 100%);
+    box-shadow: 0 0 10px 1px rgba(217, 154, 68, 0.55);
 }
 
 /* --- MAIN CONTENT --- */
@@ -156,14 +177,29 @@ main {
     padding: 20px;
     margin-bottom: 24px;
     border: 1px solid var(--border);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 10px 20px -6px rgba(0, 0, 0, 0.5), 0 4px 8px -2px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 h2 {
     font-size: 1.1rem;
     margin-bottom: 16px;
     color: var(--text);
-    border-left: 4px solid var(--primary);
-    padding-left: 10px;
+    border-left: 3px solid var(--accent);
+    padding-left: 12px;
+    position: relative;
+}
+/* "Ponto de solda": um pequeno círculo aceso no início de cada título de seção,
+   reforçando a assinatura visual sem repetir a trilha do header em todo canto. */
+h2::before {
+    content: '';
+    position: absolute;
+    left: -4px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 6px 1px rgba(217, 154, 68, 0.6);
 }
 h3 {
     font-size: 1rem;

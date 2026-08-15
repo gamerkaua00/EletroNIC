@@ -83,8 +83,8 @@
     margin: 0 4px;
 }
 .interactive-term:hover, .interactive-term:active {
-    background: rgba(245, 158, 11, 0.2);
-    color: var(--accent);
+    background: rgba(217, 154, 68, 0.2);
+    color: var(--accent-bright);
     transform: scale(1.05);
 }
 .equation-hint {

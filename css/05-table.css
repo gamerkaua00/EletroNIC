@@ -2,7 +2,7 @@
 .table-container {
     overflow-x: auto;
     border-radius: 12px;
-    border: 1px solid #333;
+    border: 1px solid var(--border);
     box-shadow: 0 0 20px rgba(0,0,0,0.5);
     margin-top: 20px;
 }
@@ -15,7 +15,7 @@
     background-color: var(--table-bg);
 }
 .truth-table th {
-    background-color: #0f172a;
+    background-color: var(--bg);
     color: var(--primary);
     padding: 15px;
     font-weight: 800;
@@ -25,7 +25,7 @@
 }
 .truth-table td {
     padding: 12px;
-    border-bottom: 1px solid #1e293b;
+    border-bottom: 1px solid var(--border);
     color: #64748b;
     font-family: 'Courier New', monospace;
     font-weight: bold;
@@ -52,7 +52,7 @@
     color: var(--accent);
     font-weight: 900;
     font-size: 1.1rem;
-    text-shadow: 0 0 8px var(--accent), 0 0 15px rgba(245, 158, 11, 0.4);
+    text-shadow: 0 0 8px var(--accent), 0 0 15px rgba(217, 154, 68, 0.4);
 }
 
 /* --- MODO "MONTAR TABELA" --- */
