@@ -130,7 +130,7 @@ jobs:
             cp res/values/colors.xml app/res/values/colors.xml
 
             sed -i '/<\/widget>/i \    <platform name="android">' app/config.xml
-            sed -i '/<\/widget>/i \        <resource-file src="res/values/colors.xml" target="app/src/main/res/values/colors.xml" />' app/config.xml
+            sed -i '/<\/widget>/i \        <resource-file src="res/values/colors.xml" target="/app/src/main/res/values/colors.xml" />' app/config.xml
             sed -i '/<\/widget>/i \        <icon density="mdpi" background="@color/ic_launcher_background" foreground="res/android/icon/mdpi-foreground.png" src="res/android/icon/mdpi.png" />' app/config.xml
             sed -i '/<\/widget>/i \        <icon density="hdpi" background="@color/ic_launcher_background" foreground="res/android/icon/hdpi-foreground.png" src="res/android/icon/hdpi.png" />' app/config.xml
             sed -i '/<\/widget>/i \        <icon density="xhdpi" background="@color/ic_launcher_background" foreground="res/android/icon/xhdpi-foreground.png" src="res/android/icon/xhdpi.png" />' app/config.xml
