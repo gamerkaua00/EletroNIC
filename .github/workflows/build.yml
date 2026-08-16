@@ -124,18 +124,33 @@ jobs:
           fi
 
           echo "Configurando ícone adaptativo (Android 8+)..."
-          if [ -d "res/android/icon" ] && [ -f "res/values/colors.xml" ]; then
-            mkdir -p app/res/android/icon app/res/values
-            cp res/android/icon/*.png app/res/android/icon/
+          if [ -d "res/android" ] && [ -f "res/values/colors.xml" ]; then
+            mkdir -p app/res/values app/res/android/mipmap-anydpi-v26
+            for d in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+              mkdir -p "app/res/android/mipmap-$d"
+              cp "res/android/mipmap-$d/ic_launcher_foreground.png" "app/res/android/mipmap-$d/ic_launcher_foreground.png"
+              cp "res/android/mipmap-$d/ic_launcher.png" "app/res/android/mipmap-$d/ic_launcher.png"
+              cp "res/android/mipmap-$d/ic_launcher_round.png" "app/res/android/mipmap-$d/ic_launcher_round.png"
+            done
             cp res/values/colors.xml app/res/values/colors.xml
+            cp res/android/mipmap-anydpi-v26/ic_launcher.xml app/res/android/mipmap-anydpi-v26/ic_launcher.xml
+            cp res/android/mipmap-anydpi-v26/ic_launcher_round.xml app/res/android/mipmap-anydpi-v26/ic_launcher_round.xml
 
+            # Abordagem manual via resource-file (não usa a tag <icon background/foreground>
+            # do Cordova, que é conhecida por gerar builds quebrados em várias versões do
+            # cordova-android - https://github.com/apache/cordova-android/issues/1616 e outros).
             sed -i '/<\/widget>/i \    <platform name="android">' app/config.xml
             sed -i '/<\/widget>/i \        <resource-file src="res/values/colors.xml" target="/app/src/main/res/values/colors.xml" />' app/config.xml
-            sed -i '/<\/widget>/i \        <icon density="mdpi" background="@color/ic_launcher_background" foreground="res/android/icon/mdpi-foreground.png" src="res/android/icon/mdpi.png" />' app/config.xml
-            sed -i '/<\/widget>/i \        <icon density="hdpi" background="@color/ic_launcher_background" foreground="res/android/icon/hdpi-foreground.png" src="res/android/icon/hdpi.png" />' app/config.xml
-            sed -i '/<\/widget>/i \        <icon density="xhdpi" background="@color/ic_launcher_background" foreground="res/android/icon/xhdpi-foreground.png" src="res/android/icon/xhdpi.png" />' app/config.xml
-            sed -i '/<\/widget>/i \        <icon density="xxhdpi" background="@color/ic_launcher_background" foreground="res/android/icon/xxhdpi-foreground.png" src="res/android/icon/xxhdpi.png" />' app/config.xml
-            sed -i '/<\/widget>/i \        <icon density="xxxhdpi" background="@color/ic_launcher_background" foreground="res/android/icon/xxxhdpi-foreground.png" src="res/android/icon/xxxhdpi.png" />' app/config.xml
+            sed -i '/<\/widget>/i \        <resource-file src="res/android/mipmap-anydpi-v26/ic_launcher.xml" target="/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml" />' app/config.xml
+            sed -i '/<\/widget>/i \        <resource-file src="res/android/mipmap-anydpi-v26/ic_launcher_round.xml" target="/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml" />' app/config.xml
+            for d in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+              sed -i "/<\/widget>/i \\        <resource-file src=\"res/android/mipmap-$d/ic_launcher_foreground.png\" target=\"/app/src/main/res/mipmap-$d/ic_launcher_foreground.png\" />" app/config.xml
+              sed -i "/<\/widget>/i \\        <resource-file src=\"res/android/mipmap-$d/ic_launcher.png\" target=\"/app/src/main/res/mipmap-$d/ic_launcher.png\" />" app/config.xml
+              sed -i "/<\/widget>/i \\        <resource-file src=\"res/android/mipmap-$d/ic_launcher_round.png\" target=\"/app/src/main/res/mipmap-$d/ic_launcher_round.png\" />" app/config.xml
+            done
+            sed -i '/<\/widget>/i \        <edit-config file="app/src/main/AndroidManifest.xml" mode="merge" target="/manifest/application">' app/config.xml
+            sed -i '/<\/widget>/i \            <application android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round" />' app/config.xml
+            sed -i '/<\/widget>/i \        <\/edit-config>' app/config.xml
             sed -i '/<\/widget>/i \    <\/platform>' app/config.xml
           else
             echo "⚠️ Arquivos de ícone adaptativo não encontrados, pulando..."
