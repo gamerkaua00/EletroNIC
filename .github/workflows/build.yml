@@ -42,7 +42,9 @@ jobs:
         run: |
           cordova create app com.kmz.eletronic "EletroNIC"
           cd app
-          cordova platform add android
+          # Versão fixada (não flutuante) - evita quebra silenciosa de build quando o
+          # Cordova lança uma versão nova do cordova-android sem a gente saber.
+          cordova platform add android@15.0.0
 
       - name: Add Cordova Plugins
         run: |
@@ -110,8 +112,8 @@ jobs:
           sed -i '/<\/widget>/i \    <preference name="ShowSplashScreen" value="false" />' app/config.xml
           sed -i '/<\/widget>/i \    <preference name="SplashScreenDelay" value="0" />' app/config.xml
           sed -i '/<\/widget>/i \    <preference name="FadeSplashScreen" value="false" />' app/config.xml
-          sed -i '/<\/widget>/i \    <preference name="BackgroundColor" value="0xff0f172a" />' app/config.xml
-          sed -i '/<\/widget>/i \    <preference name="AndroidWindowSplashScreenBackground" value="#0f172a" />' app/config.xml
+          sed -i '/<\/widget>/i \    <preference name="BackgroundColor" value="0xff0a0c10" />' app/config.xml
+          sed -i '/<\/widget>/i \    <preference name="AndroidWindowSplashScreenBackground" value="#0a0c10" />' app/config.xml
           
           if [ -f "icon.png" ]; then
             echo "Ícone personalizado encontrado! Configurando..."
@@ -119,6 +121,24 @@ jobs:
             sed -i '/<\/widget>/i \    <icon src="www/icon.png" />' app/config.xml
             sed -i '/<\/widget>/i \    <splash src="www/icon.png" />' app/config.xml
             sed -i '/<\/widget>/i \    <preference name="AndroidWindowSplashScreenAnimatedIcon" value="www/icon.png" />' app/config.xml
+          fi
+
+          echo "Configurando ícone adaptativo (Android 8+)..."
+          if [ -d "res/android/icon" ] && [ -f "res/values/colors.xml" ]; then
+            mkdir -p app/res/android/icon app/res/values
+            cp res/android/icon/*.png app/res/android/icon/
+            cp res/values/colors.xml app/res/values/colors.xml
+
+            sed -i '/<\/widget>/i \    <platform name="android">' app/config.xml
+            sed -i '/<\/widget>/i \        <resource-file src="res/values/colors.xml" target="app/src/main/res/values/colors.xml" />' app/config.xml
+            sed -i '/<\/widget>/i \        <icon density="mdpi" background="@color/ic_launcher_background" foreground="res/android/icon/mdpi-foreground.png" src="res/android/icon/mdpi.png" />' app/config.xml
+            sed -i '/<\/widget>/i \        <icon density="hdpi" background="@color/ic_launcher_background" foreground="res/android/icon/hdpi-foreground.png" src="res/android/icon/hdpi.png" />' app/config.xml
+            sed -i '/<\/widget>/i \        <icon density="xhdpi" background="@color/ic_launcher_background" foreground="res/android/icon/xhdpi-foreground.png" src="res/android/icon/xhdpi.png" />' app/config.xml
+            sed -i '/<\/widget>/i \        <icon density="xxhdpi" background="@color/ic_launcher_background" foreground="res/android/icon/xxhdpi-foreground.png" src="res/android/icon/xxhdpi.png" />' app/config.xml
+            sed -i '/<\/widget>/i \        <icon density="xxxhdpi" background="@color/ic_launcher_background" foreground="res/android/icon/xxxhdpi-foreground.png" src="res/android/icon/xxxhdpi.png" />' app/config.xml
+            sed -i '/<\/widget>/i \    <\/platform>' app/config.xml
+          else
+            echo "⚠️ Arquivos de ícone adaptativo não encontrados, pulando..."
           fi
 
       - name: Build APK (Release Version)
@@ -138,9 +158,34 @@ jobs:
           keyPassword: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           buildToolsVersion: ${{ steps.android_tools.outputs.version }}
         
-      # Upload do APK
+      # Upload do APK - continua saindo pra instalar e testar direto no aparelho
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: EletroNIC-KMZ-2026-Release
           path: ${{ steps.sign_app.outputs.signedFile }}
+
+      # --- AAB (Android App Bundle) - formato exigido pela Play Store pra novas publicações ---
+      # Não substitui o APK: os dois saem do mesmo build, o APK pra testar no aparelho, o
+      # AAB pra quando for hora de enviar de verdade pra Play Store.
+      - name: Build AAB (Release Version)
+        run: |
+          cd app
+          cordova build android --release -- --packageType=bundle
+
+      - name: Sign AAB
+        id: sign_aab
+        uses: ilharp/sign-android-release@v1
+        with:
+          releaseDir: app/platforms/android/app/build/outputs/bundle/release
+          signingKey: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          keyAlias: ${{ secrets.ANDROID_KEY_ALIAS }}
+          keyStorePassword: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          keyPassword: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          buildToolsVersion: ${{ steps.android_tools.outputs.version }}
+
+      - name: Upload AAB Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: EletroNIC-KMZ-2026-Release-AAB
+          path: ${{ steps.sign_aab.outputs.signedFile }}
