@@ -1,0 +1,24 @@
+# --- Cordova (caso alguem rode `cordova create`/`cordova platform add` localmente) ---
+platforms/
+plugins/
+www/
+*.apk
+*.aab
+*.jks
+*.keystore
+
+# --- Node ---
+node_modules/
+npm-debug.log*
+package-lock.json
+
+# --- Sistema operacional / editor ---
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+.idea/
+
+# --- Variaveis de ambiente / segredos locais ---
+.env
+.env.local
