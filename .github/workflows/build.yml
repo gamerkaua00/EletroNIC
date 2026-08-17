@@ -58,6 +58,12 @@ jobs:
           rm app/www/index.html
           rm -f app/www/js/index.js app/www/css/index.css
           mkdir -p app/www/css app/www/js
+
+          echo "Declarando namespace xmlns:android na tag raiz do config.xml..."
+          # Sem isso, qualquer atributo android:... usado em <edit-config> (como o do
+          # icone adaptativo) fica "sem namespace" quando o Cordova gera a copia interna
+          # em res/xml/config.xml, causando erro AttributePrefixUnbound no build.
+          sed -i 's/<widget /<widget xmlns:android="http:\/\/schemas.android.com\/apk\/res\/android" /' app/config.xml
           
           echo "Minificando e copiando folha de estilo (CSS)..."
           # O CSS agora é dividido em vários arquivos por seção (css/01-base.css,
