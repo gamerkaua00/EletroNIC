@@ -43,37 +43,71 @@
         <section id="section-gates" class="view-section active">
             <h2>Simulador</h2>
             <div class="card">
-                <label>Escolha a Porta Lógica</label>
-                <select id="gate-selector" onchange="updateGateLogic()">
-                    <option value="AND">AND (E)</option>
-                    <option value="OR">OR (OU)</option>
-                    <option value="NOT">NOT (NÃO)</option>
-                    <option value="NAND">NAND</option>
-                    <option value="NOR">NOR</option>
-                    <option value="XOR">XOR</option>
-                    <option value="XNOR">XNOR</option>
-                </select>
-                
-                <div class="gate-visualizer">
-                    <div class="io-row">
-                        <div class="io-ctrl">
-                            <label class="switch"><input type="checkbox" id="inputA" onchange="updateGateLogic()"><span class="slider"></span></label>
-                            <span style="font-weight:bold; color:var(--text-muted)">Entrada A</span>
-                        </div>
-                        
-                        <div id="gate-svg" style="width:120px; height:70px; display:flex; align-items:center; justify-content:center;"></div>
-                        
-                        <div class="io-ctrl" id="inputB-container">
-                            <label class="switch"><input type="checkbox" id="inputB" onchange="updateGateLogic()"><span class="slider"></span></label>
-                            <span style="font-weight:bold; color:var(--text-muted)">Entrada B</span>
-                        </div>
+                <div class="flex-between" style="margin-bottom:16px;">
+                    <label style="margin:0;">Modo</label>
+                    <div class="mode-toggle-group">
+                        <button id="mode-explore-btn" class="mode-toggle-btn active" onclick="setSimulatorMode('explore')">Explorar</button>
+                        <button id="mode-quiz-btn" class="mode-toggle-btn" onclick="setSimulatorMode('quiz')">Quiz</button>
                     </div>
+                </div>
+
+                <!-- MODO EXPLORAR -->
+                <div id="simulator-explore-mode">
+                    <label>Escolha a Porta Lógica</label>
+                    <select id="gate-selector" onchange="updateGateLogic()">
+                        <option value="AND">AND (E)</option>
+                        <option value="OR">OR (OU)</option>
+                        <option value="NOT">NOT (NÃO)</option>
+                        <option value="NAND">NAND</option>
+                        <option value="NOR">NOR</option>
+                        <option value="XOR">XOR</option>
+                        <option value="XNOR">XNOR</option>
+                    </select>
                     
-                    <div style="text-align: center; background: var(--bg); padding: 15px; border-radius: 12px; border: 1px solid var(--border); width: 100%;">
-                        <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom: 8px; text-transform:uppercase; letter-spacing:1px;">Resultado da Saída</div>
-                        <div id="outputLed" style="width:50px; height:50px; border-radius:50%; background:#333; margin:0 auto; transition:0.3s; box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);"></div>
-                        <div id="logic-text" style="color:var(--text); font-size:1.1rem; margin-top:10px; font-family:'Courier New', monospace; font-weight:bold;"></div>
+                    <div class="gate-visualizer">
+                        <div class="io-row">
+                            <div class="io-ctrl">
+                                <label class="switch"><input type="checkbox" id="inputA" onchange="updateGateLogic()"><span class="slider"></span></label>
+                                <span style="font-weight:bold; color:var(--text-muted)">Entrada A</span>
+                            </div>
+                            
+                            <div id="gate-svg" style="width:120px; height:70px; display:flex; align-items:center; justify-content:center;"></div>
+                            
+                            <div class="io-ctrl" id="inputB-container">
+                                <label class="switch"><input type="checkbox" id="inputB" onchange="updateGateLogic()"><span class="slider"></span></label>
+                                <span style="font-weight:bold; color:var(--text-muted)">Entrada B</span>
+                            </div>
+                        </div>
+                        
+                        <div style="text-align: center; background: var(--bg); padding: 15px; border-radius: 12px; border: 1px solid var(--border); width: 100%;">
+                            <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom: 8px; text-transform:uppercase; letter-spacing:1px;">Resultado da Saída</div>
+                            <div id="outputLed" style="width:50px; height:50px; border-radius:50%; background:#333; margin:0 auto; transition:0.3s; box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);"></div>
+                            <div id="logic-text" style="color:var(--text); font-size:1.1rem; margin-top:10px; font-family:'Courier New', monospace; font-weight:bold;"></div>
+                        </div>
                     </div>
+
+                    <p id="gate-explanation" class="gate-explanation"></p>
+
+                    <div class="mini-truth-table-wrapper">
+                        <table class="mini-truth-table" id="mini-truth-table"></table>
+                    </div>
+                </div>
+
+                <!-- MODO QUIZ -->
+                <div id="simulator-quiz-mode" class="hidden">
+                    <div class="quiz-score-row">
+                        <span>Acertos: <strong id="quiz-score">0</strong> / <strong id="quiz-total">0</strong></span>
+                        <span class="quiz-reset-link" onclick="resetQuizScore()">Zerar</span>
+                    </div>
+                    <div class="quiz-question-box">
+                        <div id="quiz-question-text" class="quiz-question-text"></div>
+                        <div class="btn-row" style="margin-top:16px;">
+                            <button class="btn btn-outline quiz-answer-btn" onclick="answerQuiz(0)">0</button>
+                            <button class="btn btn-outline quiz-answer-btn" onclick="answerQuiz(1)">1</button>
+                        </div>
+                    </div>
+                    <div id="quiz-feedback" class="quiz-feedback hidden"></div>
+                    <button id="quiz-next-btn" class="btn hidden" style="margin-top:12px;" onclick="nextQuizQuestion()">Próxima Pergunta</button>
                 </div>
             </div>
             <div class="kmz-footer">© 2026 KMZ Technologies</div>

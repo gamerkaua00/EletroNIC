@@ -1,0 +1,126 @@
+/* --- SIMULADOR: ALTERNÂNCIA DE MODO --- */
+.mode-toggle-group {
+    display: flex;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 3px;
+    gap: 3px;
+}
+.mode-toggle-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.85rem;
+    padding: 7px 14px;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+.mode-toggle-btn.active {
+    background: var(--primary-gradient);
+    color: white;
+}
+
+/* --- EXPLICAÇÃO DA PORTA --- */
+.gate-explanation {
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-style: italic;
+    margin-top: 16px;
+    padding: 0 8px;
+}
+
+/* --- MINI TABELA VERDADE AO VIVO --- */
+.mini-truth-table-wrapper {
+    margin-top: 14px;
+    display: flex;
+    justify-content: center;
+}
+.mini-truth-table {
+    border-collapse: collapse;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    width: 100%;
+    max-width: 260px;
+}
+.mini-truth-table th {
+    color: var(--accent);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--border);
+}
+.mini-truth-table td {
+    text-align: center;
+    padding: 6px 10px;
+    color: var(--text-muted);
+    font-weight: bold;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.2s;
+}
+.mini-truth-table tr.mini-row-active td {
+    background: rgba(59, 130, 246, 0.12);
+    color: var(--text);
+}
+.mini-truth-table tr.mini-row-active td:first-child {
+    border-radius: 6px 0 0 6px;
+}
+.mini-truth-table tr.mini-row-active td:last-child {
+    border-radius: 0 6px 6px 0;
+}
+
+/* --- MODO QUIZ --- */
+.quiz-score-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+}
+.quiz-score-row strong { color: var(--text); }
+.quiz-reset-link {
+    color: var(--danger);
+    font-size: 0.8rem;
+    cursor: pointer;
+    text-decoration: underline;
+}
+.quiz-question-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+}
+.quiz-question-text {
+    font-size: 1.05rem;
+    color: var(--text);
+    line-height: 1.5;
+}
+.quiz-question-text strong { color: var(--accent); }
+.quiz-answer-btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+.quiz-feedback {
+    text-align: center;
+    font-weight: bold;
+    font-size: 1rem;
+    padding: 12px;
+    border-radius: 10px;
+    margin-top: 12px;
+}
+.quiz-feedback-correct {
+    color: var(--success);
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+.quiz-feedback-wrong {
+    color: var(--danger);
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
