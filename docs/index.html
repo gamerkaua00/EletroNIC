@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EletroNIC — Eletrônica Digital</title>
+<style>
+    :root {
+        --bg: #0a0c10;
+        --surface: #12151b;
+        --border: #232a35;
+        --text: #f1f5f9;
+        --text-muted: #8b93a1;
+        --primary: #3b82f6;
+        --accent: #d99a44;
+        --accent-bright: #f0b268;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+        background-color: var(--bg);
+        background-image:
+            radial-gradient(circle at 12% 8%, rgba(217, 154, 68, 0.06), transparent 40%),
+            radial-gradient(circle at 88% 85%, rgba(59, 130, 246, 0.06), transparent 40%);
+        color: var(--text);
+        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 32px 20px;
+        text-align: center;
+    }
+    .logo {
+        font-size: 3rem;
+        font-weight: 900;
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        letter-spacing: -1px;
+        margin-bottom: 4px;
+    }
+    .tagline {
+        color: var(--text-muted);
+        font-size: 1rem;
+        margin-bottom: 36px;
+        max-width: 420px;
+        line-height: 1.5;
+    }
+    .trace {
+        width: 140px;
+        height: 2px;
+        background: linear-gradient(90deg, transparent 0%, var(--accent) 20%, var(--accent-bright) 50%, var(--accent) 80%, transparent 100%);
+        box-shadow: 0 0 10px 1px rgba(217, 154, 68, 0.55);
+        margin-bottom: 36px;
+    }
+    .links {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        width: 100%;
+        max-width: 320px;
+    }
+    .link-card {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 14px 20px;
+        color: var(--text);
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.95rem;
+        transition: border-color 0.2s, transform 0.1s;
+    }
+    .link-card:active { transform: scale(0.98); }
+    .link-card.primary { border-color: var(--primary); color: var(--primary); }
+    .link-card.accent { border-color: var(--accent); color: var(--accent-bright); }
+    .footer {
+        margin-top: 48px;
+        font-size: 0.78rem;
+        color: #6b7280;
+    }
+</style>
+</head>
+<body>
+
+<div class="logo">⚡ EletroNIC</div>
+<p class="tagline">
+    App de eletrônica digital para Android — tabelas verdade, Mapa de Karnaugh,
+    diagramas de circuito e mais, tudo offline.
+</p>
+
+<div class="trace"></div>
+
+<div class="links">
+    <a class="link-card primary" href="https://github.com/gamerkaua00/EletroNIC">
+        📦 Código-fonte no GitHub
+    </a>
+    <a class="link-card accent" href="privacy-policy.html">
+        🔒 Política de Privacidade
+    </a>
+    <a class="link-card" href="https://github.com/gamerkaua00/EletroNIC/actions">
+        ⬇️ Baixar última versão (APK)
+    </a>
+</div>
+
+<div class="footer">© 2026 KMZ Technologies — Todos os direitos reservados.</div>
+
+</body>
+</html>

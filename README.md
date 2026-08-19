@@ -54,7 +54,9 @@ comuns — tudo funcionando **100% offline**.
 ├── css/                     # estilos, divididos por seção (01-base, 02-forms...)
 ├── js/                      # lógica, um arquivo por módulo/tela
 ├── res/android/             # ícone adaptativo (Android 8+)
-├── privacy-policy.html      # política de privacidade (Play Store)
+├── docs/                    # GitHub Pages: landing page + política de privacidade
+│   ├── index.html
+│   └── privacy-policy.html
 └── .github/workflows/       # pipeline de build (APK + AAB assinados)
 ```
 
