@@ -21,23 +21,127 @@ function filterCalc(input, baseId) {
     input.value = input.value.replace(regex, '').replace('.',',');
 }
 
-function calcUniversal() {
-    const baseA = parseInt(document.getElementById('base-a').value), baseB = parseInt(document.getElementById('base-b').value);
-    const valA = parseAnyBase(document.getElementById('calc-a').value, baseA), valB = parseAnyBase(document.getElementById('calc-b').value, baseB);
-    if(isNaN(valA) || isNaN(valB)) return;
+// --- Suporte a largura de bits fixa e complemento de 2 ---
+const BITWISE_OPS = ['AND', 'OR', 'XOR', 'NOT', 'SHL', 'SHR'];
+
+function getBitWidth() {
+    const el = document.getElementById('calc-bitwidth');
+    return el ? parseInt(el.value, 10) : 8;
+}
+
+function isTwosComplementMode() {
+    const el = document.getElementById('calc-mode');
+    return el ? el.value === 'twos' : false;
+}
+
+// Reduz qualquer valor (positivo, negativo, fora da largura) pro padrão de bits sem sinal
+// equivalente dentro da largura escolhida (0 .. 2^width - 1) - é assim que um registrador
+// de verdade se comporta quando "estoura".
+function toUnsignedBits(value, width) {
+    const mod = Math.pow(2, width);
+    let v = Math.trunc(value) % mod;
+    if (v < 0) v += mod;
+    return v;
+}
+
+// Interpreta um padrão de bits sem sinal como um valor COM sinal, se o modo complemento
+// de 2 estiver ativo (bit mais significativo = 1 -> número negativo).
+function interpretSigned(unsignedValue, width, twosComplement) {
+    if (!twosComplement) return unsignedValue;
+    const half = Math.pow(2, width - 1);
+    return unsignedValue >= half ? unsignedValue - Math.pow(2, width) : unsignedValue;
+}
+
+// Formata um valor sem sinal numa base, preenchendo com zeros à esquerda até a largura
+// de bits escolhida (ex: 5 em binário 8-bit vira "00000101", não só "101").
+function formatFixedWidthBase(unsignedValue, base, width) {
+    let digits;
+    if (base === 2) digits = width;
+    else if (base === 8) digits = Math.ceil(width / 3);
+    else if (base === 16) digits = Math.ceil(width / 4);
+    else digits = 0;
+    let s = Math.trunc(unsignedValue).toString(base).toUpperCase();
+    if (digits > 0) s = s.padStart(digits, '0');
+    return s;
+}
+
+function onCalcOpChange() {
     const op = document.getElementById('calc-op').value;
+    const isUnary = op === 'NOT';
+    const groupB = document.getElementById('calc-b-group');
+    if (groupB) groupB.classList.toggle('hidden', isUnary);
+}
+
+function calcUniversal() {
+    const baseA = parseInt(document.getElementById('base-a').value);
+    const baseB = parseInt(document.getElementById('base-b').value);
+    const op = document.getElementById('calc-op').value;
+    const isUnary = op === 'NOT';
+
+    const rawA = parseAnyBase(document.getElementById('calc-a').value, baseA);
+    const rawB = isUnary ? 0 : parseAnyBase(document.getElementById('calc-b').value, baseB);
+    if (isNaN(rawA) || (!isUnary && isNaN(rawB))) return;
+
     document.getElementById('calc-results').style.display = 'block';
-    // FIX: divisão por zero antes retornava 0 silenciosamente, fazendo parecer
-    // que essa era a resposta real. Agora mostramos um erro explícito.
-    if (op === '/' && valB === 0) {
+
+    const isBitwise = BITWISE_OPS.includes(op);
+    const width = getBitWidth();
+    const twos = isTwosComplementMode();
+
+    if (isBitwise) {
+        // Operações bit a bit sempre trabalham no padrão de bits (sem sinal), truncado
+        // pra largura escolhida.
+        const unsignedA = toUnsignedBits(rawA, width);
+        const unsignedB = toUnsignedBits(rawB, width);
+        let result;
+        switch (op) {
+            case 'AND': result = unsignedA & unsignedB; break;
+            case 'OR': result = unsignedA | unsignedB; break;
+            case 'XOR': result = unsignedA ^ unsignedB; break;
+            case 'NOT': result = ~unsignedA; break;
+            case 'SHL': result = unsignedA << unsignedB; break;
+            case 'SHR': result = unsignedA >>> unsignedB; break;
+        }
+        const displayUnsigned = toUnsignedBits(result, width);
+        const displayDecimal = interpretSigned(displayUnsigned, width, twos);
+        document.getElementById('res-dec').innerText = String(displayDecimal);
+        document.getElementById('res-bin').innerText = formatFixedWidthBase(displayUnsigned, 2, width);
+        document.getElementById('res-oct').innerText = formatFixedWidthBase(displayUnsigned, 8, width);
+        document.getElementById('res-hex').innerText = formatFixedWidthBase(displayUnsigned, 16, width);
+        return;
+    }
+
+    // Aritmética (+, -, *, /): interpreta os valores digitados como padrão de bits e,
+    // se o modo complemento de 2 estiver ativo, reinterpreta como valor com sinal antes
+    // de operar.
+    const signedA = interpretSigned(toUnsignedBits(rawA, width), width, twos);
+    const signedB = interpretSigned(toUnsignedBits(rawB, width), width, twos);
+
+    if (op === '/' && signedB === 0) {
+        // FIX: divisão por zero antes retornava 0 silenciosamente, fazendo parecer
+        // que essa era a resposta real. Agora mostramos um erro explícito.
         ['res-dec','res-bin','res-oct','res-hex'].forEach(id => document.getElementById(id).innerText = 'Erro: ÷0');
         return;
     }
-    let res = (op === '+') ? valA+valB : (op === '-') ? valA-valB : (op === '*') ? valA*valB : valA/valB;
-    document.getElementById('res-dec').innerText = formatAnyBase(res, 10);
-    document.getElementById('res-bin').innerText = formatAnyBase(res, 2);
-    document.getElementById('res-oct').innerText = formatAnyBase(res, 8);
-    document.getElementById('res-hex').innerText = formatAnyBase(res, 16);
+
+    let result = (op === '+') ? signedA+signedB : (op === '-') ? signedA-signedB : (op === '*') ? signedA*signedB : signedA/signedB;
+
+    if (!Number.isInteger(result)) {
+        // Resultado fracionário (ex: divisão não exata) - largura fixa não se aplica a
+        // frações, então mantém o comportamento livre de sempre.
+        document.getElementById('res-dec').innerText = formatAnyBase(result, 10);
+        document.getElementById('res-bin').innerText = formatAnyBase(result, 2);
+        document.getElementById('res-oct').innerText = formatAnyBase(result, 8);
+        document.getElementById('res-hex').innerText = formatAnyBase(result, 16);
+        return;
+    }
+
+    const displayUnsigned = toUnsignedBits(result, width);
+    const displayDecimal = twos ? interpretSigned(displayUnsigned, width, true) : displayUnsigned;
+    document.getElementById('res-dec').innerText = String(displayDecimal);
+    document.getElementById('res-bin').innerText = formatFixedWidthBase(displayUnsigned, 2, width);
+    document.getElementById('res-oct').innerText = formatFixedWidthBase(displayUnsigned, 8, width);
+    document.getElementById('res-hex').innerText = formatFixedWidthBase(displayUnsigned, 16, width);
 }
 
 function convertBase(type) {

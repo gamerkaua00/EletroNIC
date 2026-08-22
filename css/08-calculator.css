@@ -4,3 +4,16 @@
 .calc-input-group { display: flex; gap: 8px; margin-bottom: 12px; }
 .res-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 0.95rem; }
 .res-row span:last-child { font-family: 'Courier New', monospace; color: var(--success); font-weight: bold; }
+
+/* Largura de bits + modo (sem sinal / complemento de 2) */
+.calc-config-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 4px;
+}
+.calc-config-row label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}

@@ -331,6 +331,26 @@
 
             <div class="card">
                 <h3>Cálculos</h3>
+
+                <div class="calc-config-row">
+                    <div>
+                        <label style="margin-bottom:4px;">Largura de Bits</label>
+                        <select id="calc-bitwidth" style="margin:0;">
+                            <option value="4">4 bits</option>
+                            <option value="8" selected>8 bits</option>
+                            <option value="16">16 bits</option>
+                            <option value="32">32 bits</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="margin-bottom:4px;">Modo</label>
+                        <select id="calc-mode" style="margin:0;">
+                            <option value="unsigned" selected>Sem sinal</option>
+                            <option value="twos">Complemento de 2</option>
+                        </select>
+                    </div>
+                </div>
+
                 <div class="calc-input-group">
                     <input type="text" id="calc-a" placeholder="Valor A" oninput="filterCalc(this, 'base-a')">
                     <select id="base-a" onchange="filterCalc(document.getElementById('calc-a'), 'base-a')" style="width:90px; margin:0;">
@@ -339,12 +359,14 @@
                 </div>
                 
                 <div style="display:flex; justify-content:center; margin-bottom:12px; gap:8px;">
-                    <select id="calc-op" style="width:80px; text-align:center; font-weight:bold; font-size:1.2rem; margin:0;">
+                    <select id="calc-op" onchange="onCalcOpChange()" style="width:110px; text-align:center; font-weight:bold; font-size:1.1rem; margin:0;">
                         <option value="+">+</option><option value="-">-</option><option value="*">×</option><option value="/">÷</option>
+                        <option value="AND">AND</option><option value="OR">OR</option><option value="XOR">XOR</option><option value="NOT">NOT</option>
+                        <option value="SHL">SHL (&lt;&lt;)</option><option value="SHR">SHR (&gt;&gt;)</option>
                     </select>
                 </div>
 
-                <div class="calc-input-group">
+                <div class="calc-input-group" id="calc-b-group">
                     <input type="text" id="calc-b" placeholder="Valor B" oninput="filterCalc(this, 'base-b')">
                     <select id="base-b" onchange="filterCalc(document.getElementById('calc-b'), 'base-b')" style="width:90px; margin:0;">
                         <option value="2" selected>BIN</option><option value="10">DEC</option><option value="8">OCT</option><option value="16">HEX</option>
